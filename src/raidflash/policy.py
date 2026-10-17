@@ -23,7 +23,7 @@ def _flag_path() -> str:
 
 MIN_TOKENS = 16
 D_MOST = 7
-BUSY_STREAMS = 4
+BUSY_STREAMS = 8
 
 # Compat only. Do not apply. kind 13 = fc7:0.3 without noisy beta.
 TURBO_CODE = [13, 7, 300000, 0]
@@ -80,7 +80,7 @@ def adapt_code(code: list, max_tokens: int, constraint=None, engine=None):
     if not code or not code[0]:
         return code, False
     min_tok = _env_int("RAIDFLASH_MIN_TOKENS", "GLM53_TF_RAIDFLASH_MIN_TOKENS", "16")
-    busy = _env_int("RAIDFLASH_BUSY", "GLM53_TF_RAIDFLASH_BUSY", "4")
+    busy = _env_int("RAIDFLASH_BUSY", "GLM53_TF_RAIDFLASH_BUSY", "8")
     most = _env_int("RAIDFLASH_D_MOST", "GLM53_TF_RAIDFLASH_D_MOST", "7")
     if max_tokens < min_tok:
         _log(f"degrade denso->serial: max_tokens={max_tokens} < {min_tok}")
@@ -106,7 +106,7 @@ def bind_d(policy, engine=None):
     if not hasattr(policy, "fixed") or not hasattr(policy, "most"):
         return policy
     n = _n_active(engine)
-    busy = _env_int("RAIDFLASH_BUSY", "GLM53_TF_RAIDFLASH_BUSY", "4")
+    busy = _env_int("RAIDFLASH_BUSY", "GLM53_TF_RAIDFLASH_BUSY", "8")
     most = _env_int("RAIDFLASH_D_MOST", "GLM53_TF_RAIDFLASH_D_MOST", "7")
     if n >= busy:
         if policy.most > 3:

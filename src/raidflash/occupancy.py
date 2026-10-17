@@ -19,9 +19,9 @@ def k_target(parallel: int, n_active: int, k_codo: int) -> int:
 
 @dataclass
 class Occupancy:
-    parallel: int = 4
+    parallel: int = 8
     k_codo_d: int = 4
-    k_codo_p: int = 4  # v0.1: P sisters bounded by --parallel (knee of the slot cap)
+    k_codo_p: int = 8
     n_active: int = 0
 
     def idle(self) -> int:

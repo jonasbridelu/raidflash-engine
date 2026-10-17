@@ -1,0 +1,9 @@
+RAIDFLASH
+Copyright 2026 Johann
+
+This product is the occupancy layer (one user fills every free GPU stream).
+It is not a fork of TensorFold. TensorFold is Apache-2.0
+(https://github.com/ — apply the overlay in patches/tensorfold/).
+
+Hydragen (arXiv 2402.05099) and IPPD (arXiv 2609.05707) are cited as related
+work; they are not bundled.

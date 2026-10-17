@@ -19,7 +19,7 @@ SECTIONS = [
 
 
 def main() -> None:
-    base = os.environ.get("RAIDFLASH_BASE_URL", "http://192.168.100.11:8000")
+    base = os.environ.get("RAIDFLASH_BASE_URL", "http://127.0.0.1:8000")
     p = Packer(base_url=base)
     out = p.complete(DOC, SECTIONS, stripe_tokens=80)
     print(f"k={out['k']} wall={out['wall_s']}s agg={out['agg_tok_s']} "
