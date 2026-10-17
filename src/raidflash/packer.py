@@ -48,7 +48,7 @@ class Packer:
         wall = time.time() - t0
         choice = (resp.get("choices") or [{}])[0]
         msg = choice.get("message") or {}
-        text = msg.get("content") or ""
+        text = msg.get("content") or msg.get("reasoning_content") or ""
         us = resp.get("usage") or {}
         tf = resp.get("tensorfold") or {}
         pt = us.get("prompt_tokens") or 0
