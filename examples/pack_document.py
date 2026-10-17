@@ -15,6 +15,10 @@ SECTIONS = [
     "Almacenamiento",
     "Contingencia electrica",
     "Auditoria de seguridad",
+    "Disponibilidad",
+    "Licencias",
+    "Correo",
+    "Respaldos",
 ]
 
 
@@ -22,7 +26,7 @@ def main() -> None:
     base = os.environ.get("RAIDFLASH_BASE_URL", "http://127.0.0.1:8000")
     p = Packer(base_url=base)
     out = p.complete(DOC, SECTIONS, stripe_tokens=80)
-    print(f"k={out['k']} wall={out['wall_s']}s agg={out['agg_tok_s']} "
+    print(f"mode={out['mode']} k={out['k']} wall={out['wall_s']}s agg={out['agg_tok_s']} "
           f"cached_min={out['cached_pct_min']}%")
     print(out["text"][:800])
 

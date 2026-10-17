@@ -1,7 +1,8 @@
-"""v0.1 packer: one user POST → seed (P) + k sister streams (slots of --parallel).
+"""v0.1 packer: one user POST → seed (P) + k sister streams.
 
-This is the product API. The engine stays OpenAI-compatible. RAIDFLASH fills
-C_max with that user's stripes instead of leaving slots for other tenants.
+Prefers in-engine `/v1/raidflash/complete` (one POST, App.run lanes).
+Falls back to OpenAI chat fan-out when the overlay is absent.
+k = min(sections, occupancy.p_open()) — dynamic, not a hardcoded 8.
 """
 from __future__ import annotations
 
@@ -24,11 +25,13 @@ class Packer:
         model: str | None = None,
         occupancy: Occupancy | None = None,
         timeout: float = 300.0,
+        engine: bool = True,
     ):
         self.base_url = (base_url or os.environ.get("RAIDFLASH_BASE_URL", "http://127.0.0.1:8000")).rstrip("/")
         self.model = model or os.environ.get("RAIDFLASH_MODEL", "GLM-5.3-Flash-EXL3")
-        self.occ = occupancy or Occupancy(parallel=int(os.environ.get("RAIDFLASH_PARALLEL", "4")))
+        self.occ = occupancy or Occupancy.from_env()
         self.timeout = timeout
+        self.engine = engine
 
     def _post(self, prompt: str, max_tokens: int) -> dict[str, Any]:
         max_tokens = int(max_tokens)
@@ -71,15 +74,75 @@ class Packer:
         stripe_tokens: int = 80,
         seed_tokens: int = SEED_MIN_TOKENS,
     ) -> dict[str, Any]:
-        """P seed then k sisters in parallel. k = occupancy.p_open() after seed.
+        """P seed then k sisters. k = occupancy.p_open() after seed (dynamic).
 
-        Returns merged text plus per-lane metrics. v0.1 does not split a generic
-        chat; it packs a document+sections job into all free slots.
+        Tries in-engine `/v1/raidflash/complete` first. HTTP fan-out if 404.
         """
         if not sections:
             raise ValueError("sections required")
         k = min(len(sections), max(1, self.occ.p_open() or self.occ.parallel))
         secs = sections[:k]
+        if self.engine:
+            try:
+                return self._complete_engine(document, secs, stripe_tokens, seed_tokens)
+            except urllib.error.HTTPError as exc:
+                if exc.code != 404:
+                    raise
+        return self._complete_http(document, secs, stripe_tokens, seed_tokens)
+
+    def _complete_engine(
+        self,
+        document: str,
+        secs: list[str],
+        stripe_tokens: int,
+        seed_tokens: int,
+    ) -> dict[str, Any]:
+        body = json.dumps({
+            "model": self.model,
+            "raidflash": {
+                "document": document,
+                "sections": secs,
+                "stripe_tokens": int(stripe_tokens),
+                "seed_tokens": max(SEED_MIN_TOKENS, int(seed_tokens)),
+            },
+        }).encode()
+        req = urllib.request.Request(
+            self.base_url + "/v1/raidflash/complete",
+            data=body,
+            headers={"Content-Type": "application/json"},
+        )
+        t0 = time.time()
+        with urllib.request.urlopen(req, timeout=self.timeout) as r:
+            resp = json.loads(r.read().decode())
+        wall = time.time() - t0
+        rf = resp.get("raidflash") or {}
+        us = resp.get("usage") or {}
+        choice = (resp.get("choices") or [{}])[0]
+        msg = choice.get("message") or {}
+        text = msg.get("content") or msg.get("reasoning_content") or ""
+        return {
+            "version": "0.1.0",
+            "mode": rf.get("mode") or "raidflash-engine",
+            "k": rf.get("k") or len(secs),
+            "text": text,
+            "wall_s": rf.get("wall_s") or round(wall, 3),
+            "seed": rf.get("seed") or {},
+            "sisters": rf.get("sisters") or [],
+            "completion_total": us.get("completion_tokens") or rf.get("completion_total"),
+            "agg_tok_s": rf.get("agg_tok_s"),
+            "cached_pct_min": rf.get("cached_pct_min"),
+            "cached_tokens": (us.get("prompt_tokens_details") or {}).get("cached_tokens")
+            or rf.get("cached_tokens"),
+        }
+
+    def _complete_http(
+        self,
+        document: str,
+        secs: list[str],
+        stripe_tokens: int,
+        seed_tokens: int,
+    ) -> dict[str, Any]:
+        k = len(secs)
         t0 = time.time()
         seed = self._post(seed_prompt(document), max(SEED_MIN_TOKENS, int(seed_tokens)))
         prompts = sister_prompts(document, secs)

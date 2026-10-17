@@ -1,9 +1,10 @@
 RAIDFLASH
 Copyright 2026 Johann
 
-This product is the occupancy layer (one user fills every free GPU stream).
-It is not a fork of TensorFold. TensorFold is Apache-2.0
-(https://github.com/ — apply the overlay in patches/tensorfold/).
+This product is the occupancy layer: one user fills free GPU streams up to
+the dynamic knee (k = min(PARALLEL, k_codo), separately for P and D).
+It is not a TensorFold fork. TensorFold is Apache-2.0; the overlay in
+patches/tensorfold/ is applied surgically.
 
-Hydragen (arXiv 2402.05099) and IPPD (arXiv 2609.05707) are cited as related
-work; they are not bundled.
+Hydragen (arXiv 2402.05099) is not bundled. MLA / Hydragen is Dynamo work,
+outside this stack. IPPD (arXiv 2609.05707) is cited as related work.
