@@ -42,3 +42,28 @@ def test_p_cold_codo_is_one():
     m = EfiMap.gb10()
     assert m.k_codo("P_cold") == 1
     assert m.plan(3, "P_cold")["k"] == [1, 1, 1]
+
+
+def test_b300_flash_one_user_thousands():
+    m = EfiMap.gb300_flash_pair()
+    one = m.plan(1, "D")
+    assert one["k"] == [32]
+    assert one["tok_s"][0] >= 2700
+
+
+def test_b300_flash_four_users_fill_128():
+    m = EfiMap.gb300_flash_pair()
+    four = m.plan(4, "D")
+    assert four["k"] == [32, 32, 32, 32]
+    assert four["idle"] == 0
+    assert min(four["tok_s"]) >= 700
+    assert four["die_tok_s"] >= 2700
+
+
+def test_b300_glm_full_one_user_128():
+    m = EfiMap.gb300_glm_full_pair()
+    one = m.plan(1, "D")
+    four = m.plan(4, "D")
+    assert one["k"] == [128]
+    assert four["k"] == [32, 32, 32, 32]
+    assert one["tok_s"][0] > four["tok_s"][0]

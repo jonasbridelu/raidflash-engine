@@ -88,6 +88,45 @@ class EfiMap:
         )
 
     @classmethod
+    def gb300_flash_pair(cls) -> EfiMap:
+        """2× DGX Station GB300, GLM-5.3 Flash PD-split. Public cells, not this lab.
+
+        StorageReview 2026-10-05: 362 tok/s @1, 2721 @32, 3256 @256.
+        Strong elbow ~32 (7.5× C1). 256 only +20% more. PARALLEL 128 so four
+        users can each sit on that elbow. 1 user → k=32 ~2700 tok/s.
+        4 users → [32, 32, 32, 32], die ~2950, ~740 each.
+        """
+        d = {1: 362.0, 32: 2721.0, 256: 3256.0}
+        return cls(
+            parallel=128,
+            d=d,
+            p_cold={1: 1.0},
+            p_hot={},
+            k_codo_d=32,
+            k_codo_p_cold=1,
+            k_codo_p_hot=32,
+        )
+
+    @classmethod
+    def gb300_glm_full_pair(cls) -> EfiMap:
+        """2× GB300, GLM-5.3 full (overflows 252 GiB → TP2). Still climbing at 256.
+
+        StorageReview: 188 tok/s one Station → 5018 on the pair @ high C.
+        catid FP8 TP2 MTP0: C1 119, C32 1001, C128 2019.
+        RAIDFLASH: 1 user takes 128 lanes; 4 users split [32, 32, 32, 32].
+        """
+        d = {1: 188.0, 32: 1001.4, 128: 2019.5, 256: 5018.0}
+        return cls(
+            parallel=128,
+            d=d,
+            p_cold={1: 1.0},
+            p_hot={},
+            k_codo_d=128,
+            k_codo_p_cold=1,
+            k_codo_p_hot=128,
+        )
+
+    @classmethod
     def load(cls, path: str | Path) -> EfiMap:
         raw = json.loads(Path(path).read_text())
         d = {int(c["k"]): float(c["agg_tok_s"]) for c in raw.get("D") or []}

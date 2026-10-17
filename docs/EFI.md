@@ -44,4 +44,19 @@ print(m.plan(3, "P_cold"))  # {'k': [1, 1, 1]}
 k_codo: D=8, P-cold=1, P-hot=8, job=8. P-hot cache ≥99%. D 8 is **2.45×** C1.
 
 JSON: `/home/admin/raidflash/versiones/EFI-MAP-GB10-2026-10-17.json`.
-B300 / 120-wide engines: measure a new map. Copy the computer, not the 8.
+
+## 2×B300 ($240k) — public cells, same computer
+
+StorageReview 2026-10-05, Flash PD pair. C1 362. Elbow **2721 @32**. 3256 @256 is +20%.
+
+```python
+EfiMap.gb300_flash_pair().plan(1, "D")  # k=[32]  ~2721 tok/s  one person
+EfiMap.gb300_flash_pair().plan(4, "D")  # k=[32,32,32,32]  ~740 each, die full
+```
+
+`--parallel` 128 is the seat count. Flash elbow is 32. Four users each sit
+on the elbow. One user gets thousands. Same HBM bitrate; more of the job
+finishes. GLM-5.3 full pair still climbs (188 → 5018): `gb300_glm_full_pair()`.
+
+B300 / 120-wide engines: measure a live map the day the box lands. Copy
+the computer, not the 8. Program: [PROGRAM.md](PROGRAM.md).
