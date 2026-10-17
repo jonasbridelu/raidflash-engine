@@ -84,3 +84,7 @@ def test_three_users_send_three_sisters(monkeypatch):
     assert len(sent) == 3
     Packer(base_url="http://engine", n_users=3, user_index=2).complete("doc", secs)
     assert len(bodies[1]["raidflash"]["sections"]) == 2  # [3,3,2]
+    assert bodies[0]["raidflash"]["n_users"] == 3
+    assert bodies[0]["raidflash"]["user_index"] == 0
+    assert bodies[1]["raidflash"]["user_index"] == 2
+    assert bodies[0]["raidflash"]["phase"] == "P_hot"

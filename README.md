@@ -13,36 +13,36 @@ k = min(PARALLEL, k_codo_p)   # prefill
 k = min(PARALLEL, k_codo_d)   # decode
 ```
 
-`PARALLEL` is a **cap**. 8 is the GB10 measured cap/knee on this TensorFold
-pair. It is not a law. On a B300, 120 can beat 64. Measure; take the highest
-k the system allows that still raises aggregate tok/s.
+`PARALLEL` is a **cap**. **8 seats is the GB10 0.1 recipe** (D peak, fat KV
+pool). k=16 was measured: packer pays, D peak does not (pool tax). Copy the
+occupancy law, not a bigger N.
 
 Johann, 2026. Paper: [PAPER.md](docs/PAPER.md) · [español](docs/PAPER.es.md).
 Program: [PROGRAM.md](docs/PROGRAM.md). Neighbour: [IPPD](https://arxiv.org/abs/2609.05707).
-Law: [OCCUPANCY](docs/OCCUPANCY.md). Injector: [EFI](docs/EFI.md) — k per user
-from the power curve (`EfiMap.plan(n_users, phase)`). GB10 live map + 2×B300
-public Flash/GLM cells.
+Law: [OCCUPANCY](docs/OCCUPANCY.md). Injector: [EFI](docs/EFI.md).
+Complete measured table (k × tokens × prose/code/reasoning): [TABLE](docs/TABLE.md).
 
 | | job | limit |
 |---|---|---|
 | **P** | seed the document, then sister streams | no acceptance; KV is there or the GEMM runs |
 | **D** | dense drafts on those lanes | acceptance bounds **depth of one chain**, not lane count |
 
-## Live smoke — 2026-10-17
+## Live smoke — 8-seat recipe (0.1)
 
-Image `tensorfold-glm53:v0.6.1-raidflash`, `streams.max=8`, pool 1 873 920.
-Real `usage` tokens. Tree OFF. `PREFILL_ROWS=4096` `FILL_ROWS=2048`.
+Image `tensorfold-glm53:v0.6.2-raidflash`, `streams.max=8`, tree OFF,
+`PREFILL_ROWS=4096` `FILL_ROWS=2048` `CACHE_GIB=12.5`. Real `usage`, delta==sum.
 
 | run | result |
 |---|---|
-| In-engine `POST /v1/raidflash/complete` k=8 | wall **7.366 s**, agg **89.1 tok/s**, cached_min **99.1%**, cached_tokens **51 200**, seed_pt 6413, HTTP 200 |
-| D k=1 | **34.2 tok/s** (80 completion tokens, 2.342 s, `delta_gen_ok`) |
-| D k=8 | **103.5 tok/s** (640 completion tokens, 6.183 s, cached_pct_min 99.5%, `delta_gen_ok`) |
-| P-hot (prior) | **99.3%** / 51 200 cached_tokens |
-| D homogeneous shorts k=4 (prior) | ~**110 tok/s** |
-| D mixed k=8 (prior) | **131.7 tok/s** |
-| P-cold k=1..8 (prior) | ~**1500 tok/s** flat (SMs full) |
-| `MULTI_WINDOW=64` | worse — keep 32 |
+| D k=8 fill-to-length (80×8) | **76–85 tok/s**, 640 tok, `length` ×8 |
+| EFI D shorts k=8 | **121 tok/s** (2.45× C1) |
+| Expression k=8 prosa/código/thinking @1024 | **84 / 109 / 101 tok/s** |
+| Thinking k=8 @256 | **115 tok/s** |
+| In-engine packer k=8 | cache **96–99%**, `k_plan=[8]` |
+| P-cold | ~**1600 tok/s** at k=1 (extra k does not pay) |
+| 3 users | `[3, 3, 2]` |
+
+Full grid: [TABLE](docs/TABLE.md). `joint` / `async+packed` / tree / WINDOW=64 stay off.
 
 ## Install
 
@@ -67,8 +67,10 @@ thread pool.
 POST /v1/raidflash/complete
 ```
 
-Body: `document`, `sections`, optional `stripe_tokens` / `seed_tokens`.
+Body: `document`, `sections`, optional `n_users` / `user_index` / `phase` /
+`stripe_tokens` / `seed_tokens`.
 P seed **must** use `max_tokens >= 16` (drafted) so DFlash keep is resumable.
+One user fills `min(PARALLEL, k_codo)`. Three users on this box: `[3, 3, 2]`.
 
 ## Engine overlay (TensorFold)
 

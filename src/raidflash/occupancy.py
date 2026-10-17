@@ -54,7 +54,7 @@ def _env_int(*names: str, default: int) -> int:
 @dataclass
 class Occupancy:
     parallel: int = 8
-    k_codo_d: int = 4
+    k_codo_d: int = 8  # live EFI 2026-10-17: D 81→121 still pays at k=8
     k_codo_p: int = 8
     n_active: int = 0
 
@@ -63,7 +63,7 @@ class Occupancy:
         parallel = _env_int("RAIDFLASH_PARALLEL", "RAIDFLASH_BUSY", "GLM53_TF_RAIDFLASH_BUSY", default=8)
         return cls(
             parallel=parallel,
-            k_codo_d=_env_int("RAIDFLASH_K_CODO_D", default=4),
+            k_codo_d=_env_int("RAIDFLASH_K_CODO_D", default=parallel),
             k_codo_p=_env_int("RAIDFLASH_K_CODO_P", default=parallel),
         )
 

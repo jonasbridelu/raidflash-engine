@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1 — 2026-10-17 — 8-seat stable
+
+The shareable recipe. `--parallel 8`, fat pool, RAIDFLASH-D/P, in-engine EFI.
+
+- In-engine packer EFI: `n_users` / `user_index` / `phase` (`1 → [8]`, `3 → [3,3,2]`).
+- Expression grid 60/60 limpio: k × 10…5000 × prosa/código/thinking (`docs/TABLE.md`).
+- Knobs that lost and stay off: `MULTI_DEPTH=joint`, `MULTI_ASYNC`+`packed`, tree, WINDOW=64.
+- k=16 fork measured then rolled back: D k=16 110 vs 8-seat D shorts 121; packer 16 hermanas 117. **0.1 ships 8 seats.**
+- TensorFold Zig 1.0.x (incl. 1.0.1) is a different engine: GLM CUDA EXL3 occupancy stays on Mia Python 0.6.0 + this overlay. Zig `zig-engine` is WIP (shared rounds, missing Triton variants).
+
 ## 0.1.0 — 2026-10-17
 
 First public cut. Occupancy layer for **one user**. k is dynamic.

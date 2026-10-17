@@ -11,7 +11,7 @@ from .policy import adapt_code, bind_d, enabled
 from .prefill import sister_prompts, seed_prompt
 from .packer import Packer
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = [
     "Occupancy",
     "EfiMap",

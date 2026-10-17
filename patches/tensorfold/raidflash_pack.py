@@ -2,6 +2,10 @@
 
 Uses App.run on the CUDA engine thread pool. No HTTP loopback.
 Seed must be drafted (max_tokens >= 16) so DFlash keep is resumable.
+
+k is the EFI injector: one user fills min(PARALLEL, k_codo_phase);
+n users split the filled die (3 users on 8 D lanes → [3, 3, 2]).
+P-cold extra k does not pay; P-hot sisters inherit the seed.
 """
 from __future__ import annotations
 
@@ -13,12 +17,59 @@ from typing import Any, Callable
 SEED_MIN_TOKENS = 16
 
 
-def _parallel() -> int:
-    for key in ("RAIDFLASH_PARALLEL", "RAIDFLASH_BUSY", "GLM53_TF_RAIDFLASH_BUSY"):
-        raw = (os.environ.get(key) or "").strip()
+def _env_int(*names: str, default: int) -> int:
+    for name in names:
+        raw = (os.environ.get(name) or "").strip()
         if raw.isdigit() and int(raw) > 0:
             return int(raw)
-    return 8
+    return default
+
+
+def _parallel() -> int:
+    return _env_int("RAIDFLASH_PARALLEL", "RAIDFLASH_BUSY", "GLM53_TF_RAIDFLASH_BUSY", default=8)
+
+
+def split_lanes(n_users: int, parallel: int, k_codo: int) -> list[int]:
+    """Fill paying lanes, cap each user at k_codo, split leftover even."""
+    n = max(1, int(n_users))
+    cap = max(1, int(parallel))
+    codo = max(1, int(k_codo))
+    active = min(n, cap)
+    usable = min(cap, active * codo)
+    if usable < active:
+        active = usable
+    base, rem = divmod(usable, active) if active else (0, 0)
+    out = [base + (1 if i < rem else 0) for i in range(active)]
+    out.extend([0] * (n - active))
+    return out
+
+
+def k_codo(phase: str, parallel: int) -> int:
+    """GB10 live EFI 2026-10-17: D still pays at 8, P-cold at 1, P-hot at 8."""
+    if phase == "P_cold":
+        return _env_int("RAIDFLASH_K_CODO_P_COLD", default=1)
+    if phase == "D":
+        return _env_int("RAIDFLASH_K_CODO_D", default=parallel)
+    return _env_int("RAIDFLASH_K_CODO_P", "RAIDFLASH_K_CODO_P_HOT", default=parallel)
+
+
+def k_for(
+    n_sections: int,
+    n_users: int | None = None,
+    user_index: int = 0,
+    phase: str = "P_hot",
+    parallel: int | None = None,
+) -> int:
+    """Sisters for this user: EFI split, then section count, then slot cap."""
+    cap = max(1, int(parallel if parallel is not None else _parallel()))
+    n = n_users if n_users is not None else _env_int("RAIDFLASH_USERS", default=1)
+    ph = phase if phase in ("D", "P_cold", "P_hot") else "P_hot"
+    ks = split_lanes(n, cap, k_codo(ph, cap))
+    ui = max(0, int(user_index))
+    mine = ks[ui] if ui < len(ks) else 0
+    if mine <= 0:
+        mine = 1
+    return min(max(1, int(n_sections)), mine, cap)
 
 
 def sister_prompt(document: str, i: int, k: int, section: str) -> str:
@@ -77,12 +128,15 @@ def complete(
     seed_tokens: int = SEED_MIN_TOKENS,
     model: str = "",
     cancelled: Callable[[], bool] | None = None,
+    n_users: int | None = None,
+    user_index: int = 0,
+    phase: str = "P_hot",
 ) -> dict[str, Any]:
     if not document or not str(document).strip():
         raise ValueError("raidflash: document required")
     if not sections:
         raise ValueError("raidflash: sections required")
-    k = min(len(sections), max(1, _parallel()))
+    k = k_for(len(sections), n_users=n_users, user_index=user_index, phase=phase)
     secs = [str(s) for s in sections[:k]]
     seed_tokens = max(SEED_MIN_TOKENS, int(seed_tokens))
     stripe_tokens = max(1, int(stripe_tokens))
@@ -113,6 +167,8 @@ def complete(
     out_tok = seed["completion_tokens"] + sum(s["completion_tokens"] for s in sisters)
     pt = seed["prompt_tokens"] + sum(s["prompt_tokens"] for s in sisters)
     cached = sum(s["cached_tokens"] for s in sisters)
+    n = n_users if n_users is not None else _env_int("RAIDFLASH_USERS", default=1)
+    ph = phase if phase in ("D", "P_cold", "P_hot") else "P_hot"
     return {
         "k": k,
         "mode": "raidflash-engine",
@@ -128,4 +184,8 @@ def complete(
         "agg_tok_s": round(out_tok / wall, 1) if wall else None,
         "seed_tokens": seed_tokens,
         "stripe_tokens": stripe_tokens,
+        "n_users": int(n),
+        "user_index": max(0, int(user_index)),
+        "phase": ph,
+        "k_plan": split_lanes(n, _parallel(), k_codo(ph, _parallel())),
     }

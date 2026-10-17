@@ -138,6 +138,9 @@ class Packer:
                 "sections": secs,
                 "stripe_tokens": int(stripe_tokens),
                 "seed_tokens": max(SEED_MIN_TOKENS, int(seed_tokens)),
+                "n_users": int(self.n_users),
+                "user_index": int(self.user_index),
+                "phase": "P_hot",
             },
         }).encode()
         req = urllib.request.Request(
