@@ -28,10 +28,16 @@ Decode intra-prompt de preguntas con contexto común. Hasta 7× vs prompting ind
 Vecino más cercano a RAIDFLASH. M3 sidecar :8010, no tocar motor vivo.
 Complementa Hydragen (máscara/posiciones vs kernel de atención).
 
-### 3. SARATHI chunked prefill — knob que YA tenemos
-`TF_GLM_FILL_ROWS=2048`. Papers: chunk grande → mejor TTFT / GEMM; chunk chico → D no se congela.
-Para **1 usuario** que quiere menos espera de prefill: probar **4096 y 8192**.
-P-cold ya satura SMs a k=1 (~1500 tok/s): un chunk más ancho puede subir ese techo (menos launches, GEMM más grueso). Barato: env + relanzar.
+### 3. SARATHI chunked prefill — MEDIDO 2026-10-17
+k=1 usa `TF_GLM_PREFILL_ROWS`; k=4 busy usa `TF_GLM_FILL_ROWS`. Tokens reales, `delta==sum`.
+
+| FILL=PREFILL | pool | k=1 engine tok/s | k=4 engine | k=4 agg wall |
+|---|---|---|---|---|
+| 2048 | 2.03M | 1541 | 1116 | 1480 |
+| 4096 | 1.88M | 1629 | 915 | 1541 |
+| 8192 | 1.44M | 1664 | 769 | 1601 |
+
+Lone P-cold +5.7% at 4096, +8% at 8192, diminishing. 8192 eats 29% KV pool. Equal large FILL tanks per-stream k=4. **Prod: PREFILL_ROWS=4096 FILL_ROWS=2048.**
 
 ### 4. MoE-Prefill — arXiv 2605.02960 + DuoServe-MoE 2509.07379
 Prefill MoE activa casi todos los expertos (denso agregado); decode es top-k (RAM).

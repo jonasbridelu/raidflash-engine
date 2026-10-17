@@ -6,3 +6,4 @@ dist/
 build/
 .venv/
 .env
+raidflash-engine-v0.1.0.bundle

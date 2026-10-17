@@ -1,0 +1,16 @@
+GitHub v0.1.0 — needs credentials (blocked 2026-10-17: no gh auth, SSH github denied).
+
+On a machine with gh:
+
+  gh auth login -h github.com -p https -w
+  export PATH="$HOME/.local/bin:$PATH"
+  bash /home/admin/raidflash-engine/scripts/publish.sh
+
+Or from the bundle:
+
+  git clone /home/admin/raidflash-engine/raidflash-engine-v0.1.0.bundle raidflash-engine
+  cd raidflash-engine
+  gh repo create raidflash-engine --public --source=. --remote=origin --push
+  git push origin --tags
+
+Tag: v0.1.0  commit: ef2d018

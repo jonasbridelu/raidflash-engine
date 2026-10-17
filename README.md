@@ -66,5 +66,6 @@ on two B300s is **k concurrent pieces of one job**. The packer opens those piece
 
 ## License
 
-Apache-2.0. See [CONTRIBUTING](CONTRIBUTING.md). Next: `FILL_ROWS` sweep, then
-Hydragen-MLA ([docs/LITERATURE.md](docs/LITERATURE.md)).
+Apache-2.0. See [CONTRIBUTING](CONTRIBUTING.md). FILL_ROWS sweep landed:
+`PREFILL_ROWS=4096` `FILL_ROWS=2048` (k=1 +5.7% vs 2048; 8192 eats 29% KV).
+Next: Hydragen-MLA ([docs/LITERATURE.md](docs/LITERATURE.md)).
