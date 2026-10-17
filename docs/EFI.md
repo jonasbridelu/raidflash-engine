@@ -32,16 +32,16 @@ print(m.plan(3, "D"))   # {'k': [3, 3, 2], idle: 0}
 print(m.plan(3, "P_cold"))  # {'k': [1, 1, 1]}
 ```
 
-## Fallback cells (until the live sweep JSON lands)
+## Live cells — 2026-10-16 22:08 (`delta==sum`)
 
-| k | D agg tok/s | P-cold agg prefill tok/s |
-|---|---|---|
-| 1 | 40.7 | 1421 |
-| 4 | 80.2 | 1512 |
-| 8 | 108.5 | 1492 |
+| k | D agg tok/s | P-cold prefill tok/s | P-hot vs serial | job packer tok/s |
+|---|---|---|---|---|
+| 1 | 49.5 | 1586 | 1.53× | 15.5 |
+| 2 | 71.0 | 1604 | 2.30× | 26.1 |
+| 4 | 81.1 | 1651 | 3.57× | 39.9 |
+| 8 | **121.1** | 1629 | **5.94×** | **66.8** |
 
-D still pays at 8 on this die (~2.7× C1). P-cold is flat: extra k does not
-raise prefill. P-hot (seed + sisters, 99% cache) is the prefill injector —
-cells come from the live EFI sweep (`medir_efi_map.py`).
+k_codo: D=8, P-cold=1, P-hot=8, job=8. P-hot cache ≥99%. D 8 is **2.45×** C1.
 
+JSON: `/home/admin/raidflash/versiones/EFI-MAP-GB10-2026-10-17.json`.
 B300 / 120-wide engines: measure a new map. Copy the computer, not the 8.

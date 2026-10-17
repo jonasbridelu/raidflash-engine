@@ -67,22 +67,23 @@ class EfiMap:
     k_codo_p_cold: int = 1
     k_codo_p_hot: int = 8
 
+    LIVE = Path("/home/admin/raidflash/versiones/EFI-MAP-GB10-2026-10-17.json")
+
     @classmethod
     def gb10(cls) -> EfiMap:
-        """Fallback cells from GB10 TP2 GLM-5.3-Flash until the live map lands.
-
-        D: PRE4096 fat pool 2026-10-17. P-cold: P-vs-D 2026-10-16.
-        P-hot speedup filled by EFI-MAP JSON (seed+sisters).
-        """
-        d = {1: 40.7, 4: 80.2, 8: 108.5}
-        p_cold = {1: 1420.9, 4: 1511.5, 8: 1492.2}
+        """This die's power curve. Prefers the live EFI JSON; else lab cells."""
+        if cls.LIVE.exists():
+            return cls.load(cls.LIVE)
+        d = {1: 49.5, 2: 71.0, 4: 81.1, 8: 121.1}
+        p_cold = {1: 1586.3, 2: 1603.6, 4: 1650.6, 8: 1629.2}
+        p_hot = {1: 1.53, 2: 2.3, 4: 3.57, 8: 5.94}
         return cls(
             parallel=8,
             d=d,
             p_cold=p_cold,
-            p_hot={},
-            k_codo_d=knee(sorted(d), [d[k] for k in sorted(d)]),
-            k_codo_p_cold=1,  # GEMM full at k=1; 1→4 is noise on a flat ~1500
+            p_hot=p_hot,
+            k_codo_d=8,
+            k_codo_p_cold=1,
             k_codo_p_hot=8,
         )
 

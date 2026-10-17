@@ -14,8 +14,27 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from .efi import EfiMap
 from .occupancy import Occupancy
+
+
+def _load_efi() -> EfiMap:
+    path = (os.environ.get("RAIDFLASH_EFI") or "").strip()
+    if path:
+        try:
+            return EfiMap.load(path)
+        except OSError:
+            pass
+    return EfiMap.gb10()
 from .prefill import SEED_MIN_TOKENS, merge_sisters, seed_prompt, sister_prompts
+
+
+def _env_int(*names: str, default: int) -> int:
+    for name in names:
+        raw = (os.environ.get(name) or "").strip()
+        if raw.isdigit() and int(raw) > 0:
+            return int(raw)
+    return default
 
 
 class Packer:
@@ -26,12 +45,27 @@ class Packer:
         occupancy: Occupancy | None = None,
         timeout: float = 300.0,
         engine: bool = True,
+        efi: EfiMap | None = None,
+        n_users: int | None = None,
+        user_index: int = 0,
     ):
         self.base_url = (base_url or os.environ.get("RAIDFLASH_BASE_URL", "http://127.0.0.1:8000")).rstrip("/")
         self.model = model or os.environ.get("RAIDFLASH_MODEL", "GLM-5.3-Flash-EXL3")
         self.occ = occupancy or Occupancy.from_env()
         self.timeout = timeout
         self.engine = engine
+        self.efi = efi or _load_efi()
+        self.n_users = n_users if n_users is not None else _env_int("RAIDFLASH_USERS", default=1)
+        self.user_index = max(0, int(user_index))
+
+    def _k(self, n_sections: int, phase: str = "P_hot") -> int:
+        """Sisters for this user: EFI split, then occupancy cap, then section count."""
+        ks = self.efi.allocate(self.n_users, phase if phase in ("D", "P_cold", "P_hot") else "P_hot")
+        mine = ks[self.user_index] if self.user_index < len(ks) else 0
+        if mine <= 0:
+            mine = 1
+        cap = max(1, self.occ.p_open() or self.occ.parallel)
+        return min(n_sections, mine, cap)
 
     def _post(self, prompt: str, max_tokens: int) -> dict[str, Any]:
         max_tokens = int(max_tokens)
@@ -80,7 +114,7 @@ class Packer:
         """
         if not sections:
             raise ValueError("sections required")
-        k = min(len(sections), max(1, self.occ.p_open() or self.occ.parallel))
+        k = self._k(len(sections), "P_hot")
         secs = sections[:k]
         if self.engine:
             try:

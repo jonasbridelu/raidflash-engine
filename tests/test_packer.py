@@ -63,3 +63,24 @@ def test_complete_http_fallback_on_404(monkeypatch):
     assert out["mode"] == "raidflash-P"
     assert out["k"] == 2
     assert n["i"] >= 3  # 404 + seed + 2 sisters
+
+
+def test_three_users_send_three_sisters(monkeypatch):
+    bodies = []
+
+    def fake_urlopen(req, timeout=0):
+        bodies.append(json.loads(req.data.decode()))
+        return _Resp({
+            "choices": [{"message": {"content": "ok"}}],
+            "usage": {"completion_tokens": 16},
+            "raidflash": {"k": 3, "mode": "raidflash-engine", "wall_s": 1.0,
+                          "agg_tok_s": 50.0, "cached_pct_min": 99.0, "seed": {}, "sisters": [{}, {}, {}]},
+        })
+
+    monkeypatch.setattr("raidflash.packer.urllib.request.urlopen", fake_urlopen)
+    secs = [f"s{i}" for i in range(8)]
+    Packer(base_url="http://engine", n_users=3, user_index=0).complete("doc", secs)
+    sent = bodies[0]["raidflash"]["sections"]
+    assert len(sent) == 3
+    Packer(base_url="http://engine", n_users=3, user_index=2).complete("doc", secs)
+    assert len(bodies[1]["raidflash"]["sections"]) == 2  # [3,3,2]
