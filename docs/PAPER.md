@@ -84,10 +84,11 @@ MLA/Hydragen is Dynamo, out of this stack. Neighbour: IPPD
 
 ## 6. Close
 
-Concurrency already existed. RAIDFLASH decides those concurrencies are
-stripes of a person's work, and that when several people are present the
-die is split full, not rationed. Measured on a real engine, with an EFI
-table. Apache-2.0. `raidflash-engine` v0.1.
+v0.1's methods are crude on purpose: a seed, k sisters, an EFI table, one
+POST. Archaic. Almost silly. The community will write the sharp kernels.
+The disruption is the permission: **run the GPU you already own at 100%.**
+People who were about to buy another card can enjoy the one they paid for.
+Sovereign AI. Local AI. CAKE.
 
 Spanish full text: [PAPER.es.md](PAPER.es.md). Map: [EFI.md](EFI.md).
 Law: [OCCUPANCY.md](OCCUPANCY.md).

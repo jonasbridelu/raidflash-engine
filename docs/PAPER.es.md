@@ -251,17 +251,21 @@ RAIDFLASH es la capa para que esa respuesta use el chip que se pagó.
 
 ## 9. Cierre
 
-Hay una forma educada de decirlo: occupancy-aware serving. Hay una forma
-clara: **el GPU está para la persona que pregunta**.
+Los métodos de este v0.1 son toscos a propósito: un seed, k hermanas, una
+tabla EFI, un POST. Arcaicos. Casi tontos. El kernel fino lo va a escribir
+la comunidad. El golpe no es la implementación. Es el permiso:
 
-La concurrencia ya existía. Faltaba decidir que esas concurrencias podían
-ser las tiras de un solo trabajo, y que cuando hay más de una persona el
-die se reparte entero, no se raciona a 50 tok/s por costumbre de mercado.
+**usa el GPU que ya tienes, al 100%.**
 
-Eso es RAIDFLASH. Un principio simple, medido en un engine de verdad,
-con una tabla como la de un motor de gasolina. El que lo vio no venía del
-laboratorio. Venía de mirar el banco y preguntar para quién era toda esa
-potencia.
+Quien iba a comprar otra tarjeta para “ir más rápido” puede gozar primero
+la que ya pagó. Quien creía que el techo era 50 tok/s interactivos puede
+apuntar el agregado del banco a su propio trabajo. Eso es disrupción de
+mercado con silicio soberano: AI local, en casa, en la clínica, en el
+laboratorio, sin racionar el die para inquilinos imaginarios.
+
+Amamos el AI soberano. Amamos el AI local.
+
+CAKE.
 
 ---
 
