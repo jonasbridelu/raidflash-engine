@@ -85,3 +85,16 @@ class Occupancy:
             self.k_codo_d = max(1, int(k_codo_d))
         if k_codo_p is not None:
             self.k_codo_p = max(1, int(k_codo_p))
+
+    def assign(self, n_users: int, phase: str = "D") -> list[int]:
+        """k per user from the EFI splitter. See raidflash.efi.EfiMap."""
+        from .efi import EfiMap, Phase
+
+        m = EfiMap(
+            parallel=self.parallel,
+            k_codo_d=self.k_codo_d,
+            k_codo_p_cold=1,
+            k_codo_p_hot=self.k_codo_p,
+        )
+        ph: Phase = phase if phase in ("D", "P_cold", "P_hot") else "D"
+        return m.allocate(n_users, ph)

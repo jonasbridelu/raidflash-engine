@@ -18,7 +18,8 @@ pair. It is not a law. On a B300, 120 can beat 64. Measure; take the highest
 k the system allows that still raises aggregate tok/s.
 
 Johann, 2026. Neighbour: [IPPD](https://arxiv.org/abs/2609.05707). Law:
-[OCCUPANCY](docs/OCCUPANCY.md).
+[OCCUPANCY](docs/OCCUPANCY.md). Injector: [EFI](docs/EFI.md) — k per user
+from the power curve (`EfiMap.plan(n_users, phase)`).
 
 | | job | limit |
 |---|---|---|
