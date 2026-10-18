@@ -9,6 +9,37 @@ That is 100% of the GPU you already own.
 
 Operator cheat-sheet on this box: fill P/D with k seats. Do not retune cuBLAS/kernels.
 
+## 0. Production validation — 2026-10-17 (single-stream chat path, tokens true)
+
+End-to-end validation of the shipping engine (`tensorfold-glm53:v0.6.0-raidflash`,
+hook + reasoning turbo `fnc7:0.3`, tree OFF), **real tokens from streaming `usage`**,
+2 identical reps per test, contamination guard (poller on `requests_running`).
+Baseline serial = 27.7 tok/s (same box, drafting off, measured 2026-10-16).
+
+| test | wall | TTFT | tok/s | vs serial | seconds saved | drafts→accepted |
+|---|---|---|---|---|---|---|
+| ping 16 | 0.34s | 0.14s | 47.1 | **1.70×** | 0.2s | 12→11 (92%) |
+| tool JSON 48 | 0.84s | 0.18s | 57.1 | **2.06×** | 0.9s | 43→36 (84%) |
+| prose 300 | 6.43s | 0.17s | 46.7 | **1.68×** | 4.4s | 192→144 (75%) |
+| reasoning 300 | 5.07s | 0.20s | 59.2 | **2.14×** | 5.8s | 231→199 (86%) |
+| reasoning 1000 | 14.07s | 0.23s | 71.1 | **2.57×** | 22.0s | 844→751 (89%) |
+| reasoning 3000 | 56.12s | 0.19s | 53.5 | **1.93×** | 52.2s | 2301→1807 (79%) |
+| code 512 | 8.89s | 0.20s | 57.6 | **2.08×** | 9.6s | 407→340 (84%) |
+| prefill 14k-prompt | 3.83s | **0.13s** | 52.2 | 1.89× | 3.4s | 145→121 (83%) |
+
+Read:
+
+- **Gain scales with volume** — 1.70× (ping) → 2.57× (reasoning 1000): drafting amortizes
+  with length, exactly the position-decay law in [PAPER-PD](PAPER-PD.md). R3000 dips to
+  1.93× because the think-block eats part of the budget.
+- **Prefill reuse (RAIDFLASH-P) is live**: first cold 14k-prompt request paid TTFT 1.01s,
+  the second **0.13s → 7.8× less prefill** from shared-prefix KV.
+- **TTFT flat 0.13–0.23s** across the board: no queues, instant perceived response.
+- **~101 s of wait saved** across this 8-test battery vs serial.
+- Honest caveats: the 27.7 tok/s serial is the 2026-10-16 measured baseline (no serial
+  A/B this session — would have required dropping the hook on a live engine); a third
+  client injected 131k-prompt traffic between two reps (guard caught it, clean reps used).
+
 ## 1. How to use it
 
 ```

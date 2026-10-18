@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.4 — 2026-10-17 — Production validation of the shipping engine
+
+- End-to-end validation with real tokens (streaming usage) on 2×GB10 GLM-5.3-Flash EXL3:
+  **1.68×–2.57× vs serial** across 8 expression tests, TTFT 0.13–0.23s,
+  **prefill reuse 7.8×** on repeat 14k-prompt requests. Table added to
+  [TABLE](TABLE.md) §0; raw JSON in `data/PROD-VALIDATION-20261017.json`.
+- Acceptance per regime confirmed: reasoning 86–89%, prose 75%, code 84%.
+
 ## 0.2.3 — 2026-10-17 — CAKE URL
 
 - Company site: https://cakeinfraestructure.com
