@@ -1,4 +1,10 @@
-from raidflash.prefill import merge_sisters, seed_prompt, sister_prompts
+from raidflash.prefill import (
+    bind_outline,
+    merge_sisters,
+    outline_seed_prompt,
+    seed_prompt,
+    sister_prompts,
+)
 
 
 def test_sisters_are_prefix_of_seed():
@@ -9,6 +15,22 @@ def test_sisters_are_prefix_of_seed():
     for s in sisters:
         assert s.startswith(seed)
         assert s != seed
+
+
+def test_outline_sisters_share_seed_bytes():
+    doc = "Meeting minutes.\n"
+    secs = ["A", "B"]
+    seed = outline_seed_prompt(doc, secs)
+    assert seed.startswith(doc)
+    assert "1. A" in seed and "2. B" in seed
+    shared = bind_outline(seed, "1. A\n2. B FIN0")
+    assert shared.endswith("1. A\n2. B")
+    assert not shared.endswith("FIN0")
+    sisters = sister_prompts(shared, secs)
+    for s in sisters:
+        assert s.startswith(seed)
+        assert "OUTLINE:" in s
+        assert "1. A" in s
 
 
 def test_merge_strips_fin():

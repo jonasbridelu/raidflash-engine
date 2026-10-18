@@ -76,8 +76,10 @@ are RAIDFLASH's k, aimed at one job or split by the injector.
 ## 5. Product
 
 In-engine `POST /v1/raidflash/complete`: seed + k sisters on `App.run`.
+v1.1 seed is a numbered outline; sisters share that spine (`rounds=1` default).
 Surgical TensorFold overlay (DepthPolicy `most`, no fc7 clobber). Flag
-off = stock engine. CAKE is the company (custom kernels, AI PCs for
+off = stock engine. Headline: **2.45× decode occupancy** (k=8 vs k=1), not a
+5× single cursor. CAKE is the company (custom kernels, AI PCs for
 enterprise and business, [cakeinfraestructure.com](https://cakeinfraestructure.com));
 RAIDFLASH is the occupancy layer so those machines spend the chip the
 buyer paid for.

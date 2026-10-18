@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.0 — 2026-10-18 — RAIDFLASH 1.1 outline + sync rounds
+
+- Sisters **see a shared spine**. Seed writes a numbered outline (headings
+  only, `seed_tokens ≥ 64`); sister prompts are that seed plus `OUTLINE:`
+  plus the generated spine. Prefix cache still hits the document bytes.
+- Optional **sync rounds** (`raidflash.rounds`, default **1** for speed):
+  after each wave, concatenated so-far is appended as `SO_FAR:` and the
+  next wave reads it. That is delayed visibility, not per-token
+  cross-attention.
+- Optional **polish** (`raidflash.polish`, default off): one k=1 rewrite
+  of the glued draft. Costs wall; leave off for occupancy speed.
+- Mode string `raidflash-1.1`. Tree T3 stays off. One-cursor chat stays
+  k=1 (~50 tok/s). 1.1 makes a packable **document** one completion with
+  a contract the sisters share.
+- Honest ceiling on this 2×GB10 box: D occupancy k=8 is **2.45×** C1
+  (121 vs 49.5). P-hot EFI is already **5.94×** vs serial seeds. A 5×
+  single CoT is drafting, not occupancy.
+- Live image `raidflash-glm53:1.1.0` (`engine=raidflash version=1.1.0`).
+  Smoke `POST /v1/raidflash/complete` k=2 outline: `mode=raidflash-1.1`.
+  Public title: *one job fills TensorFold’s idle seats — 2.45× decode*.
+
 ## 0.2.4 — 2026-10-17 — Production validation of the shipping engine
 
 - End-to-end validation with real tokens (streaming usage) on 2×GB10 GLM-5.3-Flash EXL3:

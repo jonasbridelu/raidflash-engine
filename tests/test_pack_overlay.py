@@ -93,6 +93,89 @@ def test_wants_pack_document_without_sections():
     assert p.wants_pack({"tools": [{}], "raidflash": {"document": "x"}}) is False
 
 
+def test_complete_outline_sisters_see_spine():
+    p = _pack()
+
+    class App:
+        served_name = "glm"
+
+        def __init__(self):
+            self.calls = []
+
+        def run(self, body, *_a, **_k):
+            content = body["messages"][0]["content"]
+            self.calls.append(content)
+            n = len(self.calls)
+            if n == 1:
+                return {
+                    "content": "1. alpha\n2. beta FIN0",
+                    "completion_tokens": 16,
+                    "prompt_tokens": 40,
+                    "cached_tokens": 0,
+                    "stats": {},
+                }
+            return {
+                "content": f"body-{n} FIN{n - 1}",
+                "completion_tokens": 8,
+                "prompt_tokens": 50,
+                "cached_tokens": 45,
+                "stats": {},
+            }
+
+    app = App()
+    out = p.complete(app, "Doc text", ["alpha", "beta"], stripe_tokens=8, seed_tokens=16)
+    assert out["mode"] == "raidflash-1.1"
+    assert out["outline"] is True
+    assert out["rounds"] == 1
+    assert out["k"] == 2
+    assert "Write ONLY a numbered outline" in app.calls[0]
+    assert "1. alpha" in app.calls[0]
+    for sister in app.calls[1:]:
+        assert sister.startswith(app.calls[0])
+        assert "OUTLINE:" in sister
+        assert "1. alpha" in sister
+    assert "body-2" in out["text"] and "body-3" in out["text"]
+
+
+def test_complete_rounds_second_wave_sees_so_far():
+    p = _pack()
+
+    class App:
+        served_name = "glm"
+
+        def __init__(self):
+            self.calls = []
+
+        def run(self, body, *_a, **_k):
+            content = body["messages"][0]["content"]
+            self.calls.append(content)
+            n = len(self.calls)
+            if n == 1:
+                return {
+                    "content": "1. A\n2. B FIN0",
+                    "completion_tokens": 8,
+                    "prompt_tokens": 20,
+                    "cached_tokens": 0,
+                    "stats": {},
+                }
+            return {
+                "content": f"r{n} FIN{(n - 2) % 2 + 1}",
+                "completion_tokens": 4,
+                "prompt_tokens": 30,
+                "cached_tokens": 20,
+                "stats": {},
+            }
+
+    app = App()
+    out = p.complete(
+        app, "Doc", ["A", "B"], stripe_tokens=8, seed_tokens=16, rounds=2, outline=True
+    )
+    assert out["rounds"] == 2
+    assert len(app.calls) == 1 + 4  # seed + 2 sisters × 2 rounds
+    second_wave = app.calls[3:]
+    assert all("SO_FAR:" in c for c in second_wave)
+
+
 def test_wants_pack_auto_long_chat(monkeypatch):
     p = _pack()
     monkeypatch.setenv("RAIDFLASH_AUTO", "1")

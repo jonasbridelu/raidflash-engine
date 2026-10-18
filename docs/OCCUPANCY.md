@@ -1,4 +1,8 @@
-# Occupancy law (v0.1)
+# Occupancy law (v1.1)
+
+v1.1 packer: seed writes a numbered outline, sisters share that spine, optional
+`rounds` so wave 2 reads `SO_FAR`. Decode occupancy numbers below are unchanged
+(memory-bound). Headline on this box: **2.45×** D at k=8 vs k=1 (121.1 / 49.5).
 
 RAIDFLASH spends unused GPU streams of **one user** on that user's job.
 Recipe knobs are caps. CUDA already parallelizes inside kernels.

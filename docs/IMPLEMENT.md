@@ -33,7 +33,8 @@ Packer(base_url).think(question)   # seed + 4 thought-sisters
 ## Do not
 
 - Default k=16 (pool tax: D peak 125 shorts → 110).
-- `MULTI_DEPTH=joint`, `MULTI_ASYNC`+`packed`, tree, `MULTI_WINDOW=64`.
+- `MULTI_DEPTH=joint`, `MULTI_ASYNC`+`packed`, tree, `WINDOW=64`.
+- v1.1 packer: `outline` (default on), `rounds` (default 1), `polish` (default off).
 - Seed `max_tokens < 16` (0% sister cache).
 - Zig TensorFold 1.0.x as drop-in (no occupancy overlay yet).
 

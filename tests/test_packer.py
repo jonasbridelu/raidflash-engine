@@ -61,7 +61,7 @@ def test_complete_http_fallback_on_404(monkeypatch):
 
     monkeypatch.setattr("raidflash.packer.urllib.request.urlopen", fake_urlopen)
     out = Packer(base_url="http://plain").complete("doc", ["a", "b"], stripe_tokens=16)
-    assert out["mode"] == "raidflash-P"
+    assert out["mode"] == "raidflash-1.1"
     assert out["k"] == 2
     assert n["i"] >= 3  # 404 + seed + 2 sisters
 

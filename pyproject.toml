@@ -1,7 +1,7 @@
 [project]
 name = "raidflash"
-version = "0.2.3"
-description = "RAIDFLASH PD: fill every free GPU stream of one user until throughput stops scaling."
+version = "0.3.0"
+description = "RAIDFLASH 1.1: one job fills idle GPU streams until the knee (2.45× decode on 2×GB10 GLM-5.3-Flash)."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"

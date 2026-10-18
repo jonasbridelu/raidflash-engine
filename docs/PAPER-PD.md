@@ -156,13 +156,15 @@ Same-budget 1024: occupancy would emit ~2400 tokens in vanilla's 30 s.
 
 ---
 
-## 6. Product 1.0
+## 6. Product 1.0 / 1.1
 
 In-engine occupancy: `POST /v1/raidflash/complete`, every chat is a
 `ChatJob` (`job_id`), EFI table per machine (`raidflash probe`),
 `raidflash:*` metrics, job-first queue. Surgical TensorFold overlay
 (`DepthPolicy.most`, never clobber `fnc` with `fc7`). Flag off = stock
-engine.
+engine. v1.1 seed writes a numbered outline; sisters share that spine
+(`rounds=1` default). Headline on this box: **2.45× decode occupancy**
+(k=8 vs k=1). A 5× single cursor is not this layer.
 
 Recipe that paid: `--parallel 8`, fat KV pool, `MULTI_WINDOW=32`, seed
 ≥16, RAIDFLASH-D most=7 unfixed.

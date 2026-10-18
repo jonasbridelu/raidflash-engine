@@ -74,10 +74,14 @@ def _raidflash(self, body: dict[str, Any], model: str, gone) -> None:
     n_users = int(rf.get("n_users") or 0) or None
     user_index = int(rf.get("user_index") or 0)
     phase = str(rf.get("phase") or "P_hot")
+    outline = rf.get("outline", True)
+    rounds = int(rf.get("rounds") or 1)
+    polish = bool(rf.get("polish"))
     out = pack(app, str(document or ""), list(sections),
                stripe_tokens=stripe, seed_tokens=seed_tokens, model=model,
                cancelled=lambda: gone.cancelled,
-               n_users=n_users, user_index=user_index, phase=phase)
+               n_users=n_users, user_index=user_index, phase=phase,
+               outline=outline, rounds=rounds, polish=polish)
     # 200 chat.completion + usage + raidflash.{k, n_users, k_plan, wall_s, seed, sisters}
 ```
 

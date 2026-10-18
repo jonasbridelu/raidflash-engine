@@ -27,7 +27,18 @@ def _load_efi() -> EfiMap:
             pass
     return EfiMap.gb10()
 from .choose import choose_k
-from .prefill import SEED_MIN_TOKENS, merge_sisters, seed_prompt, sister_prompts, thought_sections
+from .prefill import (
+    OUTLINE_SEED_TOKENS,
+    SEED_MIN_TOKENS,
+    SO_FAR_MARK,
+    bind_outline,
+    merge_sisters,
+    outline_seed_prompt,
+    seed_prompt,
+    sister_prompts,
+    strip_fin,
+    thought_sections,
+)
 
 
 def _env_int(*names: str, default: int) -> int:
@@ -108,10 +119,14 @@ class Packer:
         sections: list[str],
         stripe_tokens: int = 256,
         seed_tokens: int = SEED_MIN_TOKENS,
+        outline: bool = True,
+        rounds: int = 1,
+        polish: bool = False,
     ) -> dict[str, Any]:
         """P seed then k sisters. k = occupancy.p_open() after seed (dynamic).
 
         Tries in-engine `/v1/raidflash/complete` first. HTTP fan-out if 404.
+        v1.1: outline seed (default), optional sync rounds, optional polish.
         """
         if not sections:
             raise ValueError("sections required")
@@ -119,11 +134,17 @@ class Packer:
         secs = sections[:k]
         if self.engine:
             try:
-                return self._complete_engine(document, secs, stripe_tokens, seed_tokens)
+                return self._complete_engine(
+                    document, secs, stripe_tokens, seed_tokens,
+                    outline=outline, rounds=rounds, polish=polish,
+                )
             except urllib.error.HTTPError as exc:
                 if exc.code != 404:
                     raise
-        return self._complete_http(document, secs, stripe_tokens, seed_tokens)
+        return self._complete_http(
+            document, secs, stripe_tokens, seed_tokens,
+            outline=outline, rounds=rounds, polish=polish,
+        )
 
     def think(
         self,
@@ -147,6 +168,9 @@ class Packer:
         secs: list[str],
         stripe_tokens: int,
         seed_tokens: int,
+        outline: bool = True,
+        rounds: int = 1,
+        polish: bool = False,
     ) -> dict[str, Any]:
         body = json.dumps({
             "model": self.model,
@@ -158,6 +182,9 @@ class Packer:
                 "n_users": int(self.n_users),
                 "user_index": int(self.user_index),
                 "phase": "P_hot",
+                "outline": bool(outline),
+                "rounds": max(1, int(rounds)),
+                "polish": bool(polish),
             },
         }).encode()
         req = urllib.request.Request(
@@ -175,8 +202,8 @@ class Packer:
         msg = choice.get("message") or {}
         text = msg.get("content") or msg.get("reasoning_content") or ""
         return {
-            "version": "0.2.3",
-            "mode": rf.get("mode") or "raidflash-engine",
+            "version": "0.3.0",
+            "mode": rf.get("mode") or "raidflash-1.1",
             "k": rf.get("k") or len(secs),
             "text": text,
             "wall_s": rf.get("wall_s") or round(wall, 3),
@@ -195,30 +222,59 @@ class Packer:
         secs: list[str],
         stripe_tokens: int,
         seed_tokens: int,
+        outline: bool = True,
+        rounds: int = 1,
+        polish: bool = False,
     ) -> dict[str, Any]:
         k = len(secs)
         t0 = time.time()
-        seed = self._post(seed_prompt(document), max(SEED_MIN_TOKENS, int(seed_tokens)))
-        prompts = sister_prompts(document, secs)
-        results: list[dict | None] = [None] * k
+        rounds = max(1, int(rounds))
+        per_round = max(1, (int(stripe_tokens) + rounds - 1) // rounds)
+        if outline:
+            src = outline_seed_prompt(document, secs)
+            seed = self._post(src, max(OUTLINE_SEED_TOKENS, int(seed_tokens), SEED_MIN_TOKENS))
+            shared = bind_outline(src, seed["text"])
+        else:
+            seed = self._post(seed_prompt(document), max(SEED_MIN_TOKENS, int(seed_tokens)))
+            shared = document
+        accumulated = [""] * k
+        sisters: list[dict] = []
+        so_far = ""
+        for _ in range(rounds):
+            prefix = shared + SO_FAR_MARK + so_far if so_far else shared
+            prompts = sister_prompts(prefix, secs)
+            results: list[dict | None] = [None] * k
 
-        def worker(i: int, prompt: str) -> None:
-            results[i] = self._post(prompt, int(stripe_tokens))
+            def worker(i: int, prompt: str) -> None:
+                results[i] = self._post(prompt, per_round)
 
-        threads = [threading.Thread(target=worker, args=(i, p)) for i, p in enumerate(prompts)]
-        for th in threads:
-            th.start()
-        for th in threads:
-            th.join()
-        sisters = [r for r in results if r is not None]
-        if len(sisters) != k:
-            raise RuntimeError("sister stream failed")
-        text = merge_sisters([s["text"] for s in sisters])
+            threads = [threading.Thread(target=worker, args=(i, p)) for i, p in enumerate(prompts)]
+            for th in threads:
+                th.start()
+            for th in threads:
+                th.join()
+            sisters = [r for r in results if r is not None]
+            if len(sisters) != k:
+                raise RuntimeError("sister stream failed")
+            for i, row in enumerate(sisters):
+                chunk = strip_fin(row["text"], f"FIN{i + 1}")
+                accumulated[i] = f"{accumulated[i]}\n{chunk}".strip() if accumulated[i] else chunk
+            so_far = merge_sisters(accumulated)
+        text = so_far
+        if polish:
+            polish_src = (
+                document
+                + "\n\nRewrite the draft below into one coherent document. "
+                "Keep every fact. Do not add sections.\n\nDRAFT:\n"
+                + text
+            )
+            polished = self._post(polish_src, max(32, int(stripe_tokens)))
+            text = strip_fin(polished["text"], "FIN0") or text
         wall = time.time() - t0
         out_tok = seed["completion_tokens"] + sum(s["completion_tokens"] for s in sisters)
         return {
-            "version": "0.2.3",
-            "mode": "raidflash-P",
+            "version": "0.3.0",
+            "mode": "raidflash-1.1",
             "k": k,
             "text": text,
             "wall_s": round(wall, 3),
@@ -227,4 +283,7 @@ class Packer:
             "completion_total": out_tok,
             "agg_tok_s": round(out_tok / wall, 1) if wall else None,
             "cached_pct_min": min(s["cached_pct"] for s in sisters),
+            "outline": bool(outline),
+            "rounds": rounds,
+            "polish": bool(polish),
         }

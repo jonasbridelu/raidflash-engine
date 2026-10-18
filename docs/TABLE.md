@@ -1,7 +1,10 @@
 # Behavior table — this TensorFold engine (2×GB10, GLM-5.3-Flash EXL3)
 
 Measured on TensorFold GLM-5.3-Flash EXL3 2×GB10, `--parallel` 8, RAIDFLASH-D ON, tree OFF.
-Engine 1.0.4 packer 8k: **94.6 tok/s**, 2064 tok, cache 98.7% (`raidflash-glm53:1.0.4`).
+Engine 1.0.4 packer 8k: **94.6 tok/s**, 2064 tok, cache 98.7%.
+Engine 1.1.0 (`raidflash-glm53:1.1.0`): same occupancy grid; packer seed is a
+numbered outline (`mode=raidflash-1.1`). Outline does not move k=8 decode tok/s
+on a long document. Short jobs pay ~1 s of spine.
 Tokens are engine `usage` + `tensorfold:*_total` with **delta==sum**. Nothing is chars/4.
 
 The method is crude on purpose: open k streams of **one job** until aggregate tok/s stops paying.
@@ -46,8 +49,10 @@ Read:
 POST /v1/raidflash/complete
 ```
 
-Body: `document`, `sections`, optional `n_users`, `stripe_tokens`, `seed_tokens` (≥16).
-One user → k fills the die. Three users → `[3, 3, 2]`. P-cold → one lane each.
+Body: `document`, `sections`, optional `n_users`, `stripe_tokens`, `seed_tokens`
+(≥16; outline ≥64), `outline` (default true), `rounds` (default 1), `polish`
+(default false). One user → k fills the die. Three users → `[3, 3, 2]`.
+P-cold → one lane each. Chat/tools stay k=1.
 
 Chat `/v1/chat/completions` packs when `raidflash.document` or `raidflash.sections` is set (sections optional). `RAIDFLASH_AUTO=1` packs long non-stream chats (`max_tokens>=256`, prompt ≥512 chars). Packer k is `min(EFI, idle slots on engine.multi.lanes)`.
 

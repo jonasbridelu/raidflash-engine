@@ -1,13 +1,15 @@
-# RAIDFLASH 1.0 — PD occupancy ( Prefill/Decode )
+# RAIDFLASH 1.1
 
-**Total engine concurrency, used dynamically, for maximum tokens/s.**
+**One job fills TensorFold’s idle seats — 2.45× decode on 2×GB10 GLM-5.3-Flash.**
 
-One user. Every free GPU stream that still pays. Prefill (P) and decode (D)
-each have their own knee. Commercial serving parks ~50 tok/s on you and
-keeps the rest of the die for N tenants. RAIDFLASH spends the aggregate on
-**you**. [CAKE](https://cakeinfraestructure.com) is the company: custom
-kernels and AI PCs for enterprise and business. RAIDFLASH is the occupancy
-layer on that stack. [CAKE.md](docs/CAKE.md).
+Occupancy layer: k concurrent streams of **one packable job** until the knee.
+Prefill (P) and decode (D) have separate knees. A short chat / tool loop stays
+one seat (~50 tok/s). That 2.45× is k=8 vs k=1 on the **same** drafted engine
+(121.1 vs 49.5 tok/s), not a 5× single cursor.
+
+[CAKE](https://cakeinfraestructure.com) is the company: custom kernels and AI
+PCs for enterprise and business. RAIDFLASH is the occupancy layer on that
+stack. [CAKE.md](docs/CAKE.md). Overlay is Apache-2.0 — use it, patch it.
 
 ```
 k = min(PARALLEL, k_codo_p)   # prefill
@@ -29,10 +31,12 @@ Complete measured table (k × tokens × prose/code/reasoning): [TABLE](docs/TABL
 | **P** | seed the document, then sister streams | no acceptance; KV is there or the GEMM runs |
 | **D** | dense drafts on those lanes | acceptance bounds **depth of one chain**, not lane count |
 
-## Live smoke — 8-seat recipe (Engine 1.0.4)
+## Live smoke — 8-seat recipe (Engine 1.1.0)
 
-Image `raidflash-glm53:1.0.4`, `streams.max=8`, tree OFF, PREFIX=0,
+Image `raidflash-glm53:1.1.0`, `streams.max=8`, tree OFF, PREFIX=0,
 `PREFILL_ROWS=4096` `FILL_ROWS=2048` `CACHE_GIB=12.5`. Real `usage`, delta==sum.
+Occupancy tok/s are the 1.0.4 EFI grid (same seats, same weights). 1.1 adds a
+shared outline seed; decode of the k stripes stays memory-bound.
 
 | run | result |
 |---|---|
@@ -70,9 +74,15 @@ POST /v1/raidflash/complete
 ```
 
 Body: `document`, `sections`, optional `n_users` / `user_index` / `phase` /
-`stripe_tokens` / `seed_tokens`.
+`stripe_tokens` / `seed_tokens` / `outline` (default true) / `rounds`
+(default 1) / `polish` (default false).
 P seed **must** use `max_tokens >= 16` (drafted) so DFlash keep is resumable.
-One user fills `min(PARALLEL, k_codo)`. Three users on this box: `[3, 3, 2]`.
+Outline seed uses `≥ 64`. One user fills `min(PARALLEL, k_codo)`. Three users
+on this box: `[3, 3, 2]`.
+
+v1.1 default: seed writes the section headings, sisters write those sections,
+one concatenated completion. `rounds=2` lets wave 2 read wave 1. Chat/agent
+with tools stays 1 lane.
 
 ## Engine overlay (TensorFold)
 
@@ -85,12 +95,14 @@ One user fills `min(PARALLEL, k_codo)`. Three users on this box: `[3, 3, 2]`.
 Flag: `RAIDFLASH=1` or `/tmp/raidflash.on`. Slot cap: `--parallel`
 (engine `PARALLEL_MOST` here is 8).
 
-## What v0.1 is not
+## What v1.1 is not
 
 - Not a TensorFold fork
 - Not Hydragen / MLA (Dynamo, out of this stack)
 - Not tree T3
 - Not a fixed 8 streams
+- Not a 5× single chain / agent loop. Say **2.45× decode occupancy** when one
+  job fills 8 seats. P-hot vs serial seeds of the same document is **5.94×**.
 
 ## License
 

@@ -15,6 +15,9 @@ import time
 from typing import Any, Callable
 
 SEED_MIN_TOKENS = 16
+OUTLINE_SEED_TOKENS = 64
+OUTLINE_MARK = "\n\nOUTLINE:\n"
+SO_FAR_MARK = "\n\nSO_FAR:\n"
 
 
 def _env_int(*names: str, default: int) -> int:
@@ -170,11 +173,33 @@ def default_sections(k: int) -> list[str]:
     return [f"part-{i+1}" for i in range(max(1, int(k)))]
 
 
-def sister_prompt(document: str, i: int, k: int, section: str) -> str:
+def outline_seed_prompt(document: str, sections: list[str]) -> str:
+    titles = "\n".join(f"{i}. {s}" for i, s in enumerate(sections, 1))
     return (
         document
-        + f"\n\nTask {i}/{k} section '{section}': continue the document above. "
-        f"Write up to the token limit. No introduction, no other sections. "
+        + "\n\nWrite ONLY a numbered outline with exactly these headings, "
+        "one line each, no body:\n"
+        + titles
+        + "\nEnd with FIN0."
+    )
+
+
+def strip_fin(text: str, mark: str) -> str:
+    body = (text or "").strip()
+    if body.endswith(mark):
+        body = body[: -len(mark)].rstrip()
+    return body
+
+
+def bind_outline(seed_prompt_text: str, outline_text: str) -> str:
+    return seed_prompt_text + OUTLINE_MARK + strip_fin(outline_text, "FIN0")
+
+
+def sister_prompt(prefix: str, i: int, k: int, section: str) -> str:
+    return (
+        prefix
+        + f"\n\nTask {i}/{k} section '{section}': continue from the outline and text above. "
+        f"Write ONLY this section, up to the token limit. No introduction, no other sections. "
         f"End with FIN{i}."
     )
 
@@ -182,10 +207,7 @@ def sister_prompt(document: str, i: int, k: int, section: str) -> str:
 def merge_texts(texts: list[str]) -> str:
     parts = []
     for i, t in enumerate(texts, 1):
-        body = (t or "").strip()
-        marker = f"FIN{i}"
-        if body.endswith(marker):
-            body = body[: -len(marker)].rstrip()
+        body = strip_fin(t, f"FIN{i}")
         if body:
             parts.append(body)
     return "\n\n".join(parts)
@@ -217,6 +239,30 @@ def _lane(app, model: str, prompt: str, max_tokens: int, cancelled: Callable[[],
     }
 
 
+def _run_k(app, model, prompts: list[str], max_tokens: int, cancelled) -> list[dict[str, Any]]:
+    k = len(prompts)
+    rows: list[dict[str, Any] | None] = [None] * k
+    errors: list[BaseException] = []
+
+    def worker(i: int) -> None:
+        try:
+            rows[i] = _lane(app, model, prompts[i], max_tokens, cancelled)
+        except BaseException as exc:  # noqa: BLE001 — surface to waiter
+            errors.append(exc)
+
+    ths = [threading.Thread(target=worker, args=(i,), name=f"raidflash-P-{i}") for i in range(k)]
+    for th in ths:
+        th.start()
+    for th in ths:
+        th.join()
+    if errors:
+        raise errors[0]
+    sisters = [r for r in rows if r is not None]
+    if len(sisters) != k:
+        raise RuntimeError("raidflash: sister stream failed")
+    return sisters
+
+
 def complete(
     app,
     document: str,
@@ -229,6 +275,9 @@ def complete(
     n_users: int | None = None,
     user_index: int = 0,
     phase: str = "P_hot",
+    outline: bool = True,
+    rounds: int = 1,
+    polish: bool = False,
 ) -> dict[str, Any]:
     if not document or not str(document).strip():
         raise ValueError("raidflash: document required")
@@ -245,11 +294,18 @@ def complete(
     secs = [str(s) for s in (sections or [])[:k]]
     if len(secs) < k:
         secs.extend(default_sections(k)[len(secs):])
-    seed_tokens = max(SEED_MIN_TOKENS, int(seed_tokens))
     stripe_tokens = max(1, int(stripe_tokens))
+    rounds = max(1, int(rounds))
+    per_round = max(1, (stripe_tokens + rounds - 1) // rounds)
     model = model or getattr(app, "served_name", "") or getattr(app, "served", "") or ""
     t0 = time.perf_counter()
-    seed = _lane(app, model, document, seed_tokens, cancelled)
+    if outline:
+        seed_tokens = max(OUTLINE_SEED_TOKENS, int(seed_tokens), SEED_MIN_TOKENS)
+        seed_src = outline_seed_prompt(document, secs)
+    else:
+        seed_tokens = max(SEED_MIN_TOKENS, int(seed_tokens))
+        seed_src = document
+    seed = _lane(app, model, seed_src, seed_tokens, cancelled)
     used1 = n_active(app)
     k2 = k_for(
         len(secs),
@@ -262,51 +318,65 @@ def complete(
     if k2 < k:
         k = k2
         secs = secs[:k]
-    rows: list[dict[str, Any] | None] = [None] * k
-    errors: list[BaseException] = []
-
-    def worker(i: int) -> None:
-        try:
-            rows[i] = _lane(app, model, sister_prompt(document, i + 1, k, secs[i]), stripe_tokens, cancelled)
-        except BaseException as exc:  # noqa: BLE001 — surface to waiter
-            errors.append(exc)
-
-    ths = [threading.Thread(target=worker, args=(i,), name=f"raidflash-P-{i}") for i in range(k)]
-    for th in ths:
-        th.start()
-    for th in ths:
-        th.join()
-    if errors:
-        raise errors[0]
-    sisters = [r for r in rows if r is not None]
-    if len(sisters) != k:
-        raise RuntimeError("raidflash: sister stream failed")
+    shared = bind_outline(seed_src, seed["text"]) if outline else document
+    accumulated = [""] * k
+    sisters: list[dict[str, Any]] = []
+    out_tok = seed["completion_tokens"]
+    pt = seed["prompt_tokens"]
+    cached = 0
+    so_far = ""
+    for _ in range(rounds):
+        prefix = shared + SO_FAR_MARK + so_far if so_far else shared
+        prompts = [sister_prompt(prefix, i + 1, k, secs[i]) for i in range(k)]
+        sisters = _run_k(app, model, prompts, per_round, cancelled)
+        for i, row in enumerate(sisters):
+            chunk = strip_fin(row["text"], f"FIN{i + 1}")
+            accumulated[i] = f"{accumulated[i]}\n{chunk}".strip() if accumulated[i] else chunk
+            out_tok += row["completion_tokens"]
+            pt += row["prompt_tokens"]
+            cached += row["cached_tokens"]
+        so_far = merge_texts(accumulated)
+    text = so_far
+    polish_row = None
+    if polish:
+        polish_src = (
+            document
+            + "\n\nRewrite the draft below into one coherent document. "
+            "Keep every fact. Do not add sections.\n\nDRAFT:\n"
+            + text
+        )
+        polish_row = _lane(app, model, polish_src, max(32, stripe_tokens), cancelled)
+        text = strip_fin(polish_row["text"], "FIN0") or text
+        out_tok += polish_row["completion_tokens"]
+        pt += polish_row["prompt_tokens"]
+        cached += polish_row["cached_tokens"]
     wall = time.perf_counter() - t0
-    texts = [s["text"] for s in sisters]
-    out_tok = seed["completion_tokens"] + sum(s["completion_tokens"] for s in sisters)
-    pt = seed["prompt_tokens"] + sum(s["prompt_tokens"] for s in sisters)
-    cached = sum(s["cached_tokens"] for s in sisters)
     n = n_users if n_users is not None else _env_int("RAIDFLASH_USERS", default=1)
     ph = phase if phase in ("D", "P_cold", "P_hot") else "P_hot"
+    cache_pcts = [s["cached_pct"] for s in sisters] if sisters else [0.0]
     return {
         "k": k,
-        "mode": "raidflash-engine",
+        "mode": "raidflash-1.1",
         "wall_s": round(wall, 3),
-        "text": merge_texts(texts),
+        "text": text,
         "seed": seed,
         "sisters": sisters,
         "sections": secs,
         "completion_total": out_tok,
         "prompt_tokens": pt,
         "cached_tokens": cached,
-        "cached_pct_min": min(s["cached_pct"] for s in sisters),
+        "cached_pct_min": min(cache_pcts),
         "agg_tok_s": round(out_tok / wall, 1) if wall else None,
         "seed_tokens": seed_tokens,
         "stripe_tokens": stripe_tokens,
+        "outline": bool(outline),
+        "rounds": rounds,
+        "polish": bool(polish),
         "n_users": int(n),
         "user_index": max(0, int(user_index)),
         "phase": ph,
         "k_plan": split_lanes(n, cap, k_codo(ph, cap)),
         "n_active": used1,
         "idle": max(0, cap - used1),
+        "polish_lane": polish_row,
     }
