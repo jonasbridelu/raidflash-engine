@@ -116,3 +116,29 @@ def test_think_opens_four_sisters(monkeypatch):
     sent = bodies[0]["raidflash"]["sections"]
     assert len(sent) == 4
     assert out["k"] == 4
+
+
+def test_fork_posts_kv_continue_body(monkeypatch):
+    bodies = []
+
+    def fake_urlopen(req, timeout=0):
+        bodies.append(json.loads(req.data.decode()))
+        return _Resp({
+            "choices": [{"message": {"content": "lane text"}}],
+            "usage": {"completion_tokens": 648},
+            "raidflash": {
+                "k": 6, "mode": "raidflash-fork", "wall_s": 9.7,
+                "agg_tok_s": 66.6, "kv_continue": True, "share_len": 97,
+                "lanes": ["a", "b", "c", "d", "e", "f"], "leader_text": "worn",
+            },
+        })
+
+    monkeypatch.setattr("raidflash.packer.urllib.request.urlopen", fake_urlopen)
+    out = Packer(base_url="http://engine").fork("Cusco essay", k=6, leader_tokens=48)
+    rf = bodies[0]["raidflash"]
+    assert rf["fork"] is True
+    assert rf["leader_tokens"] == 48
+    assert rf["k"] == 6
+    assert out["kv_continue"] is True
+    assert out["share_len"] == 97
+    assert len(out["lanes"]) == 6

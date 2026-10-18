@@ -31,9 +31,9 @@ Complete measured table (k × tokens × prose/code/reasoning): [TABLE](docs/TABL
 | **P** | seed the document, then sister streams | no acceptance; KV is there or the GEMM runs |
 | **D** | dense drafts on those lanes | acceptance bounds **depth of one chain**, not lane count |
 
-## Live smoke — 8-seat recipe (Engine 1.1.0)
+## Live smoke — 8-seat recipe (Engine 1.1.2)
 
-Image `raidflash-glm53:1.1.0`, `streams.max=8`, tree OFF, PREFIX=0,
+Image `raidflash-glm53:1.1.2`, `streams.max=8`, tree OFF, PREFIX=0,
 `PREFILL_ROWS=4096` `FILL_ROWS=2048` `CACHE_GIB=12.5`. Real `usage`, delta==sum.
 Occupancy tok/s are the 1.0.4 EFI grid (same seats, same weights). 1.1 adds a
 shared outline seed; decode of the k stripes stays memory-bound.
@@ -83,6 +83,15 @@ on this box: `[3, 3, 2]`.
 v1.1 default: seed writes the section headings, sisters write those sections,
 one concatenated completion. `rounds=2` lets wave 2 read wave 1. Chat/agent
 with tools stays 1 lane.
+
+KV-continue fork (1.1.2): `raidflash.fork=true`, optional `leader_tokens`.
+Leader ids stay on the prompt; k lanes continue that chain. Occupancy of k
+cursors, not a 5× single chat.
+
+```python
+out = Packer(base_url).fork(document, k=6, leader_tokens=48, stripe_tokens=100)
+print(out["kv_continue"], out["share_len"], len(out["lanes"]))
+```
 
 ## Engine overlay (TensorFold)
 

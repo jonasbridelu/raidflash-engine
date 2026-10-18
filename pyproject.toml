@@ -1,7 +1,7 @@
 [project]
 name = "raidflash"
-version = "0.3.0"
-description = "RAIDFLASH 1.1: one job fills idle GPU streams until the knee (2.45× decode on 2×GB10 GLM-5.3-Flash)."
+version = "0.3.1"
+description = "RAIDFLASH 1.1.2: KV-continue fork + 2.45× decode occupancy on 2×GB10 GLM-5.3-Flash."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"

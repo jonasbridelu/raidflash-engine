@@ -185,3 +185,64 @@ def test_wants_pack_auto_long_chat(monkeypatch):
     assert p.wants_pack({"messages": [{"role": "user", "content": long_doc}], "max_tokens": 16}) is False
     monkeypatch.delenv("RAIDFLASH_AUTO", raising=False)
     assert p.wants_pack({"messages": [{"role": "user", "content": long_doc}], "max_tokens": 1024}) is False
+
+
+def test_continue_ids_appends_leader():
+    p = _pack()
+    assert p.continue_ids([1, 2, 3], [9, 8]) == [1, 2, 3, 9, 8]
+
+
+def test_wants_pack_fork():
+    p = _pack()
+    assert p.wants_pack({"raidflash": {"fork": True, "document": "essay"}}) is True
+
+
+def test_run_fork_keeps_leader_in_kv_not_user_text():
+    from types import SimpleNamespace
+
+    p = _pack()
+
+    class App:
+        served = "m"
+
+        def __init__(self):
+            self.calls = []
+
+        def prepare(self, body, chat):
+            return SimpleNamespace(prompt=[10, 11, 12, 13], max_tokens=body.get("max_tokens", 8), sampling=None)
+
+        def run_job_lanes(self, bodies, cancelled=None):
+            self.calls.append(bodies)
+            ntok = int(bodies[0].get("max_tokens") or 4)
+            out = []
+            for i, b in enumerate(bodies):
+                tokens = list(range(200 + i * 20, 200 + i * 20 + ntok))
+                out.append({
+                    "text": f"gen{i}-" + "x" * ntok,
+                    "content": f"gen{i}",
+                    "reasoning": "",
+                    "finish": "stop",
+                    "prompt_tokens": len(b.get("prompt_ids") or [10, 11, 12, 13]),
+                    "completion_tokens": ntok,
+                    "cached_tokens": 0,
+                    "cached_pct": 0.0,
+                    "prefill_s": 0.01,
+                    "decode_s": 0.1,
+                    "stats": {},
+                    "job": b.get("tf_raidflash"),
+                    "tokens": tokens,
+                })
+            return out
+
+    app = App()
+    out = p.run_fork(app, "Write a Cusco essay", k=3, stripe_tokens=5, leader_tokens=8)
+    assert out["mode"] == "raidflash-fork"
+    assert out["kv_continue"] is True
+    assert out["share_len"] == 12
+    assert len(app.calls) == 2
+    sister_bodies = app.calls[1]
+    expected = [10, 11, 12, 13] + list(range(200, 208))
+    for b in sister_bodies:
+        assert b["prompt_ids"] == expected
+        assert "gen0" not in b["messages"][0]["content"]
+        assert b["tf_raidflash"]["share_len"] == 12

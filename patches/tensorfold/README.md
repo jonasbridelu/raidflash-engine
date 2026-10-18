@@ -77,11 +77,19 @@ def _raidflash(self, body: dict[str, Any], model: str, gone) -> None:
     outline = rf.get("outline", True)
     rounds = int(rf.get("rounds") or 1)
     polish = bool(rf.get("polish"))
-    out = pack(app, str(document or ""), list(sections),
-               stripe_tokens=stripe, seed_tokens=seed_tokens, model=model,
-               cancelled=lambda: gone.cancelled,
-               n_users=n_users, user_index=user_index, phase=phase,
-               outline=outline, rounds=rounds, polish=polish)
+    if rf.get("fork") or str(rf.get("mode") or "") == "fork":
+        from tensorfold.families.glm5_next.cuda.raidflash_pack import run_fork
+        out = run_fork(app, str(document or ""),
+                       k=int(rf.get("k") or 6),
+                       stripe_tokens=stripe,
+                       leader_tokens=int(rf.get("leader_tokens") or 0),
+                       model=model, cancelled=lambda: gone.cancelled)
+    else:
+        out = pack(app, str(document or ""), list(sections),
+                   stripe_tokens=stripe, seed_tokens=seed_tokens, model=model,
+                   cancelled=lambda: gone.cancelled,
+                   n_users=n_users, user_index=user_index, phase=phase,
+                   outline=outline, rounds=rounds, polish=polish)
     # 200 chat.completion + usage + raidflash.{k, n_users, k_plan, wall_s, seed, sisters}
 ```
 

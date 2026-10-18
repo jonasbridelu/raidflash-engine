@@ -39,6 +39,11 @@ def thought_sections(question: str, k: int = 4) -> list[str]:
     return out
 
 
+def continue_ids(prompt_ids: list[int], generated: list[int]) -> list[int]:
+    """Append generated token ids onto the live prompt. No chat-template wrap."""
+    return list(prompt_ids) + list(generated)
+
+
 def seed_prompt(document: str) -> str:
     """v1.0 seed IS the document. Sisters must start with this exact prefix."""
     return document

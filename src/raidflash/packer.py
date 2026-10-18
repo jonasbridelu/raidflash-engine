@@ -162,6 +162,60 @@ class Packer:
         k = max(1, int(k))
         return self.complete(q, thought_sections(q, k), stripe_tokens=stripe_tokens, seed_tokens=seed_tokens)
 
+    def fork(
+        self,
+        document: str,
+        k: int = 6,
+        stripe_tokens: int = 100,
+        leader_tokens: int = 48,
+        temperature: float | None = 0.8,
+    ) -> dict[str, Any]:
+        """Leader tokens stay on the prompt; k lanes continue that chain."""
+        doc = (document or "").strip()
+        if not doc:
+            raise ValueError("document required")
+        body = json.dumps({
+            "model": self.model,
+            "messages": [{"role": "user", "content": doc}],
+            "max_tokens": int(stripe_tokens),
+            "temperature": 0.8 if temperature is None else float(temperature),
+            "raidflash": {
+                "fork": True,
+                "document": doc,
+                "k": max(1, int(k)),
+                "stripe_tokens": int(stripe_tokens),
+                "leader_tokens": max(0, int(leader_tokens)),
+            },
+        }).encode()
+        req = urllib.request.Request(
+            self.base_url + "/v1/raidflash/complete",
+            data=body,
+            headers={"Content-Type": "application/json"},
+        )
+        t0 = time.time()
+        with urllib.request.urlopen(req, timeout=self.timeout) as r:
+            resp = json.loads(r.read().decode())
+        wall = time.time() - t0
+        rf = resp.get("raidflash") or {}
+        us = resp.get("usage") or {}
+        choice = (resp.get("choices") or [{}])[0]
+        msg = choice.get("message") or {}
+        text = msg.get("content") or msg.get("reasoning_content") or ""
+        return {
+            "version": "0.3.1",
+            "mode": rf.get("mode") or "raidflash-fork",
+            "k": rf.get("k") or k,
+            "text": text,
+            "lanes": rf.get("lanes") or [],
+            "leader_text": rf.get("leader_text") or "",
+            "share_len": rf.get("share_len"),
+            "kv_continue": rf.get("kv_continue"),
+            "wall_s": rf.get("wall_s") or round(wall, 3),
+            "completion_total": us.get("completion_tokens") or rf.get("completion_total"),
+            "agg_tok_s": rf.get("agg_tok_s"),
+            "cached_pct_min": rf.get("cached_pct_min"),
+        }
+
     def _complete_engine(
         self,
         document: str,
@@ -202,7 +256,7 @@ class Packer:
         msg = choice.get("message") or {}
         text = msg.get("content") or msg.get("reasoning_content") or ""
         return {
-            "version": "0.3.0",
+            "version": "0.3.1",
             "mode": rf.get("mode") or "raidflash-1.1",
             "k": rf.get("k") or len(secs),
             "text": text,
@@ -273,7 +327,7 @@ class Packer:
         wall = time.time() - t0
         out_tok = seed["completion_tokens"] + sum(s["completion_tokens"] for s in sisters)
         return {
-            "version": "0.3.0",
+            "version": "0.3.1",
             "mode": "raidflash-1.1",
             "k": k,
             "text": text,

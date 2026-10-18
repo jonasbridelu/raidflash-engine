@@ -1,5 +1,6 @@
 from raidflash.prefill import (
     bind_outline,
+    continue_ids,
     merge_sisters,
     outline_seed_prompt,
     seed_prompt,
@@ -36,3 +37,8 @@ def test_outline_sisters_share_seed_bytes():
 def test_merge_strips_fin():
     texts = ["one FIN1", "two FIN2"]
     assert merge_sisters(texts) == "one\n\ntwo"
+
+
+def test_continue_ids():
+    assert continue_ids([1, 2], [3, 4]) == [1, 2, 3, 4]
+    assert continue_ids([], [9]) == [9]

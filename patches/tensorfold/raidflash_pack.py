@@ -12,6 +12,8 @@ from __future__ import annotations
 import os
 import threading
 import time
+import uuid
+from types import SimpleNamespace
 from typing import Any, Callable
 
 SEED_MIN_TOKENS = 16
@@ -104,7 +106,7 @@ def wants_pack(body: dict | None) -> bool:
     if isinstance(rf, dict):
         if rf.get("off") or rf.get("enabled") is False:
             return False
-        if rf.get("sections") or rf.get("document") or rf.get("auto"):
+        if rf.get("sections") or rf.get("document") or rf.get("auto") or rf.get("fork"):
             return True
     if not _auto_on():
         return False
@@ -380,3 +382,190 @@ def complete(
         "idle": max(0, cap - used1),
         "polish_lane": polish_row,
     }
+
+
+def continue_ids(prompt_ids: list[int], generated: list[int]) -> list[int]:
+    """Append generated token ids onto the live prompt. No chat-template wrap."""
+    return list(prompt_ids) + list(generated)
+
+
+def _fork_stamp(job_id: str, role: str, lane: int, k: int, share_len: int = 0) -> dict[str, Any]:
+    return {
+        "job_id": job_id,
+        "job_k": k,
+        "job_lane": lane,
+        "job_role": role,
+        "role": role,
+        "lane": lane,
+        "k": k,
+        "share_len": int(share_len or 0),
+    }
+
+
+def _encode_generated(app, text: str) -> list[int]:
+    tok = getattr(app, "tok", None)
+    if tok is None or not text:
+        return []
+    encode = getattr(tok, "encode", None)
+    if not callable(encode):
+        return []
+    try:
+        ids = encode(text, add_special_tokens=False)
+    except TypeError:
+        ids = encode(text)
+    return [int(t) for t in (ids or [])]
+
+
+def _sisters_wave(app, job, bodies: list[dict], cancelled) -> list[dict[str, Any]]:
+    run_lanes = getattr(app, "run_job_lanes", None)
+    if callable(run_lanes):
+        sisters = run_lanes(bodies, cancelled=cancelled)
+        if len(sisters) != job.k:
+            raise RuntimeError("raidflash: sister stream failed")
+        return sisters
+    model = bodies[0].get("model") if bodies else ""
+    prompts = []
+    for b in bodies:
+        msgs = b.get("messages") or []
+        prompts.append((msgs[-1].get("content") if msgs else "") or "")
+    mt = int(bodies[0].get("max_tokens") or 1) if bodies else 1
+    return _run_k(app, model, prompts, mt, cancelled)
+
+
+def run_fork(
+    app,
+    document: str,
+    *,
+    k: int = 6,
+    stripe_tokens: int = 128,
+    leader_tokens: int = 0,
+    model: str = "",
+    temperature: float | None = None,
+    cancelled: Callable[[], bool] | None = None,
+) -> dict[str, Any]:
+    """k lanes continue the same token chain. Leader ids stay on the prompt."""
+    if not document or not str(document).strip():
+        raise ValueError("raidflash: document required")
+    cap = _parallel()
+    k = max(1, min(int(k), cap))
+    stripe = max(1, int(stripe_tokens))
+    leader_n = max(0, int(leader_tokens))
+    model = model or getattr(app, "served_name", "") or getattr(app, "served", "") or ""
+    job_id = "fork-" + uuid.uuid4().hex[:12]
+    t0 = time.perf_counter()
+    stem = str(document).strip()
+    temp = 0.8 if temperature is None else float(temperature)
+    leader = None
+    out_tok = 0
+    pt = 0
+    cached = 0
+    prompt_ids: list[int] | None = None
+    kv_continue = False
+    base = {
+        "model": model,
+        "messages": [{"role": "user", "content": stem}],
+        "temperature": temp,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+    prepare_fn = getattr(app, "prepare", None)
+    if callable(prepare_fn):
+        probe = dict(base)
+        probe["max_tokens"] = max(leader_n, stripe, SEED_MIN_TOKENS)
+        probe["tf_raidflash"] = _fork_stamp(job_id, "leader" if leader_n else "fork", 0, 1)
+        prompt_ids = list(prepare_fn(probe, True).prompt)
+    if leader_n:
+        leader_body = dict(base)
+        leader_body["max_tokens"] = leader_n
+        leader_body["tf_raidflash"] = _fork_stamp(job_id, "leader", 0, 1, len(prompt_ids or []))
+        if prompt_ids is not None:
+            leader_body["prompt_ids"] = list(prompt_ids)
+        leader = _sisters_wave(app, SimpleNamespace(k=1, job_id=job_id), [leader_body], cancelled)[0]
+        gen = list(leader.get("tokens") or [])
+        if not gen:
+            gen = _encode_generated(app, leader.get("text") or "")
+        if prompt_ids is not None and gen:
+            prompt_ids = continue_ids(prompt_ids, gen)
+            kv_continue = True
+        out_tok += leader["completion_tokens"]
+        pt += leader["prompt_tokens"]
+        cached += leader["cached_tokens"]
+    share_len = len(prompt_ids) if prompt_ids is not None else 0
+    bodies = []
+    for i in range(k):
+        body = dict(base)
+        body["max_tokens"] = stripe
+        body["tf_raidflash"] = _fork_stamp(job_id, "fork", i, k, share_len)
+        if prompt_ids is not None:
+            body["prompt_ids"] = list(prompt_ids)
+        bodies.append(body)
+    sisters = _sisters_wave(app, SimpleNamespace(k=k, job_id=job_id), bodies, cancelled)
+    for row in sisters:
+        out_tok += row["completion_tokens"]
+        pt += row["prompt_tokens"]
+        cached += row["cached_tokens"]
+    wall = time.perf_counter() - t0
+    lanes = [(s.get("text") or "").strip() for s in sisters]
+    sep = "\n\n----- LANE {} -----\n\n"
+    text = "".join(sep.format(i + 1) + t for i, t in enumerate(lanes) if t)
+    leader_text = (leader.get("text") or "").strip() if leader else ""
+    return {
+        "k": k,
+        "job_id": job_id,
+        "mode": "raidflash-fork",
+        "wall_s": round(wall, 3),
+        "text": text,
+        "lanes": lanes,
+        "leader": leader,
+        "leader_text": leader_text,
+        "sisters": sisters,
+        "completion_total": out_tok,
+        "prompt_tokens": pt,
+        "cached_tokens": cached,
+        "cached_pct_min": min(s["cached_pct"] for s in sisters) if sisters else 0.0,
+        "agg_tok_s": round(out_tok / wall, 1) if wall else None,
+        "stripe_tokens": stripe,
+        "leader_tokens": leader_n,
+        "share_len": share_len,
+        "kv_continue": kv_continue,
+        "fork": True,
+        "content": text,
+        "reasoning": "",
+        "completion_tokens": out_tok,
+        "finish": "stop",
+        "calls": [],
+        "final": None,
+        "stats": {"job_id": job_id, "k": k, "fork": True, "share_len": share_len, "kv_continue": kv_continue},
+    }
+
+
+def run_job(app, body: dict, cancelled: Callable[[], bool] | None = None) -> dict[str, Any]:
+    rf = body.get("raidflash") if isinstance(body.get("raidflash"), dict) else {}
+    document = document_of(body)
+    if rf.get("fork") or str(rf.get("mode") or "") == "fork":
+        temp = rf.get("temperature", body.get("temperature"))
+        return run_fork(
+            app,
+            document,
+            k=int(rf.get("k") or 6),
+            stripe_tokens=int(rf.get("stripe_tokens") or body.get("max_tokens") or 128),
+            leader_tokens=int(rf.get("leader_tokens") or 0),
+            model=str(body.get("model") or ""),
+            temperature=None if temp is None else float(temp),
+            cancelled=cancelled,
+        )
+    sections = list(rf.get("sections") or [])
+    return complete(
+        app,
+        document,
+        sections,
+        stripe_tokens=int(rf.get("stripe_tokens") or body.get("max_tokens") or 256),
+        seed_tokens=int(rf.get("seed_tokens") or SEED_MIN_TOKENS),
+        n_users=int(rf.get("n_users") or 1),
+        user_index=int(rf.get("user_index") or 0),
+        phase=str(rf.get("phase") or "P_hot"),
+        model=str(body.get("model") or ""),
+        outline=rf.get("outline", True),
+        rounds=int(rf.get("rounds") or 1),
+        polish=bool(rf.get("polish")),
+        cancelled=cancelled,
+    )

@@ -4,6 +4,7 @@ D = decode occupancy (depth policy + k lanes).
 P = prefill occupancy (seed then sisters; no draft acceptance).
 The packer turns one OpenAI-compatible request into k engine streams.
 v1.1: outline seed, optional sync rounds, optional polish.
+v1.1.2: KV-continue fork — leader token ids stay on the prompt.
 """
 
 from .choose import choose_k, seed_then_sisters
@@ -12,6 +13,7 @@ from .occupancy import Occupancy, k_target, knee, pays
 from .policy import adapt_code, bind_d, enabled, most_for_lanes
 from .prefill import (
     bind_outline,
+    continue_ids,
     outline_seed_prompt,
     seed_prompt,
     sister_prompts,
@@ -19,7 +21,7 @@ from .prefill import (
 )
 from .packer import Packer
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __all__ = [
     "Occupancy",
     "EfiMap",
@@ -37,6 +39,7 @@ __all__ = [
     "seed_prompt",
     "outline_seed_prompt",
     "bind_outline",
+    "continue_ids",
     "thought_sections",
     "Packer",
 ]

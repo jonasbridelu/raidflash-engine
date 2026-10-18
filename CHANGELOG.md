@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.1 — 2026-10-18 — KV-continue fork (engine 1.1.2)
+
+- Fork path: leader token ids stay on the prompt; k lanes continue that
+  chain. No Tarea split, no re-paste of the leader as a new user turn.
+  `continue_ids(prompt, generated)` is the helper. Per-lane sampling salt
+  so sisters diverge. `share_len` is the LCP of those continuation prompts.
+- Live image `raidflash-glm53:1.1.2` (`engine=raidflash version=1.1.2`).
+  Cusco k=6, leader 48, stripe 100: `kv_continue=true`, `share_len=97`,
+  6 distinct lanes, 9.7 s, 66.6 tok/s, 648 completion, both GPUs peak 95%.
+  Leader sentence continues in the lanes. Sister cache 0% (stem re-prefill).
+- Occupancy headline unchanged: **2.45× decode** (121 vs 49.5) when one
+  packable job fills 8 seats. This release does not make one cursor 5×.
+  Short Hermes stays one seat.
+- Overlay: `run_fork` / `run_job` in `patches/tensorfold/raidflash_pack.py`,
+  `Packer.fork()`, `raidflash.continue_ids`.
+
 ## 0.3.0 — 2026-10-18 — RAIDFLASH 1.1 outline + sync rounds
 
 - Sisters **see a shared spine**. Seed writes a numbered outline (headings
