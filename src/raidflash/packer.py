@@ -175,7 +175,7 @@ class Packer:
         msg = choice.get("message") or {}
         text = msg.get("content") or msg.get("reasoning_content") or ""
         return {
-            "version": "0.2.0",
+            "version": "0.2.1",
             "mode": rf.get("mode") or "raidflash-engine",
             "k": rf.get("k") or len(secs),
             "text": text,
@@ -217,7 +217,7 @@ class Packer:
         wall = time.time() - t0
         out_tok = seed["completion_tokens"] + sum(s["completion_tokens"] for s in sisters)
         return {
-            "version": "0.2.0",
+            "version": "0.2.1",
             "mode": "raidflash-P",
             "k": k,
             "text": text,

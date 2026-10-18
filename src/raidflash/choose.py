@@ -3,8 +3,8 @@
 One document  → seed k=1 (P-cold sequential), then k=8 sisters (P-hot).
 Many cold docs → k=8 (prefill tok/s 2.3k → 8.8k → 15.7k).
 Decode        → k=8 even with fat KV (8k history still 59 tok/s vs C1 ~12–34).
-Thinking corto (mt≤80) → k=4 (pico 115 tok/s; k=8 recorta most por WINDOW/n).
-Thinking largo → k=8 occupancy.
+Short thinking (mt≤80) → k=4 (peak 115 tok/s; k=8 cuts `most` via WINDOW/n).
+Long thinking → k=8 occupancy.
 3 users       → [3,3,2] on D/P-hot/many; [1,1,1] on one-doc seed.
 """
 from __future__ import annotations

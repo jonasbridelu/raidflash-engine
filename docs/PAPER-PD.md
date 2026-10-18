@@ -147,7 +147,7 @@ Vanilla = one stream on the same silicon. A short Hermes chat stays 1 lane
 | 1024 prose | 30.2 s · 33.9 tok/s | 12.8 s · 80.3 tok/s (8×128) | **−17.4 s** |
 | 2048 D | ~37 s @ 55 tok/s | 16.9 s @ 121 tok/s | **−20 s** |
 | 5000 prose | 44 s, **stops at 1590 tok** | 56.5 s, **5000 tok** (8×625) | **+3410 tok** |
-| 8k acta, 8×256 | ~45 s serial | 21.8 s · 94.6 tok/s | **−23 s** |
+| 8k document, 8×256 | ~45 s serial | 21.8 s · 94.6 tok/s | **−23 s** |
 | 8 cold 8k prefs | ~2317 tok/s | **8806 tok/s** | **~3.8×** prompt |
 | code 1024 | 57 tok/s | **109 tok/s** | +52 |
 | thinking 256 | 45 tok/s | **115 tok/s** | +70 |
@@ -190,7 +190,6 @@ permission:
 People who were about to buy another card can use the one they paid for.
 Sovereign AI. Local AI. CAKE.
 
-Spanish: [PAPER-PD.es.md](PAPER-PD.es.md). Tables: [TABLE.md](TABLE.md).
-Law: [OCCUPANCY.md](OCCUPANCY.md). Map: [EFI.md](EFI.md).
+Tables: [TABLE.md](TABLE.md). Law: [OCCUPANCY.md](OCCUPANCY.md). Map: [EFI.md](EFI.md).
 
 Apache-2.0. Overlay only — TensorFold is not vendored.

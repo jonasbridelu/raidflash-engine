@@ -37,7 +37,7 @@ def test_more_sections_than_codo_still_caps():
 def test_empty_sections_fills_the_die():
     p = _pack()
     assert p.k_for(0, n_users=1, parallel=8) == 8
-    assert p.default_sections(8) == [f"parte-{i}" for i in range(1, 9)]
+    assert p.default_sections(8) == [f"part-{i}" for i in range(1, 9)]
 
 
 def test_idle_cap_leaves_room_for_other_users():
@@ -79,14 +79,14 @@ def test_n_active_walks_engine_multi_lanes():
 
 def test_document_of_complete_and_chat():
     p = _pack()
-    assert p.document_of({"document": "acta plana"}) == "acta plana"
+    assert p.document_of({"document": "plain minutes"}) == "plain minutes"
     assert p.document_of({"raidflash": {"document": "nested"}}) == "nested"
     assert p.document_of({"messages": [{"role": "user", "content": "hola"}]}) == "hola"
 
 
 def test_wants_pack_document_without_sections():
     p = _pack()
-    assert p.wants_pack({"raidflash": {"document": "acta"}}) is True
+    assert p.wants_pack({"raidflash": {"document": "minutes"}}) is True
     assert p.wants_pack({"raidflash": {"sections": ["a"]}}) is True
     assert p.wants_pack({"messages": [{"role": "user", "content": "hola"}], "max_tokens": 16}) is False
     assert p.wants_pack({"stream": True, "raidflash": {"document": "x"}}) is False
@@ -96,7 +96,7 @@ def test_wants_pack_document_without_sections():
 def test_wants_pack_auto_long_chat(monkeypatch):
     p = _pack()
     monkeypatch.setenv("RAIDFLASH_AUTO", "1")
-    long_doc = "acta " * 200
+    long_doc = "minutes " * 200
     assert len(long_doc) >= 512
     assert p.wants_pack({"messages": [{"role": "user", "content": long_doc}], "max_tokens": 1024}) is True
     assert p.wants_pack({"messages": [{"role": "user", "content": long_doc}], "max_tokens": 16}) is False

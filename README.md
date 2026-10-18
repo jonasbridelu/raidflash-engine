@@ -18,7 +18,7 @@ pool). k=16 was measured: packer pays, D peak does not (pool tax). Copy the
 occupancy law, not a bigger N.
 
 Jonathan Briceño De Luise (Peru, b. 1982), 2026.
-Paper PD: [PAPER-PD.md](docs/PAPER-PD.md) · [PDF](docs/PAPER-PD.pdf) · [español](docs/PAPER-PD.es.md) · [PDF ES](docs/PAPER-PD.es.pdf).
+Paper PD: [PAPER-PD.md](docs/PAPER-PD.md) · [PDF](docs/PAPER-PD.pdf).
 Program: [PROGRAM.md](docs/PROGRAM.md). Neighbour: [IPPD](https://arxiv.org/abs/2609.05707).
 Law: [OCCUPANCY](docs/OCCUPANCY.md). Injector: [EFI](docs/EFI.md).
 Complete measured table (k × tokens × prose/code/reasoning): [TABLE](docs/TABLE.md).
@@ -37,7 +37,7 @@ Image `raidflash-glm53:1.0.4`, `streams.max=8`, tree OFF, PREFIX=0,
 |---|---|
 | EFI D shorts k=8 | **121.1 tok/s** (2.45× C1 49.5) |
 | D k=8 mt=256 | **121.1 tok/s**, 2048 tok, 16.9 s |
-| 1024 prosa 1 cadena vs 8×128 | 30.2 s / 33.9 tok/s → **12.8 s / 80.3 tok/s** |
+| 1024 prose 1 chain vs 8×128 | 30.2 s / 33.9 tok/s → **12.8 s / 80.3 tok/s** |
 | P-hot packer 8k stripe 256 | **94.6 tok/s**, 2064 tok, cache **98.7%**, 21.8 s |
 | P-hot EFI k=8 vs serial | **5.94×**, cache 99% |
 | P-cold | ~**1600 tok/s** at k=1; 8 docs 8k → **8806 tok/s** |

@@ -19,8 +19,8 @@ P-hot   → k_codo = PARALLEL (sisters inherit that user's KV)
 D       → k_codo = last k whose agg tok/s still pays ε=5%
 ```
 
-Idle slots while any admitted user is below their codo are a miss. Extra
-lanes past the codo are a miss. Parking two of three users at zero to give
+Idle slots while any admitted user is below their knee are a miss. Extra
+lanes past the knee are a miss. Parking two of three users at zero to give
 one user k=8 is a miss **when those users are present**.
 
 ```python

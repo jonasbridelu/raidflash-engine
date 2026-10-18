@@ -4,7 +4,7 @@
 
 Jonathan Briceño De Luise · Peru, b. 1982 · October 2026 · v1.0 PD
 
-Full paper: [PAPER-PD.md](PAPER-PD.md) · [PDF](PAPER-PD.pdf) · [español](PAPER-PD.es.md) · [PDF ES](PAPER-PD.es.pdf).
+Full paper: [PAPER-PD.md](PAPER-PD.md) · [PDF](PAPER-PD.pdf).
 
 ## Abstract
 
@@ -68,7 +68,7 @@ measured).
 | 8 | **121.1** | 1629 | **5.94×** | **66.8** |
 
 Knees: D=8, P-cold=1, P-hot=8, job=8. A B300 map may want 32/64/120.
-Copy the computer, not the 8.
+Copy the law, not the 8.
 
 Public shape: StorageReview Flash 353 C1 vs 2721 @ 32. Those 32 streams
 are RAIDFLASH's k, aimed at one job or split by the injector.
@@ -92,5 +92,4 @@ The disruption is the permission: **run the GPU you already own at 100%.**
 People who were about to buy another card can enjoy the one they paid for.
 Sovereign AI. Local AI. CAKE.
 
-Spanish full text: [PAPER.es.md](PAPER.es.md). Map: [EFI.md](EFI.md).
-Law: [OCCUPANCY.md](OCCUPANCY.md).
+Map: [EFI.md](EFI.md). Law: [OCCUPANCY.md](OCCUPANCY.md). Tables: [TABLE.md](TABLE.md).

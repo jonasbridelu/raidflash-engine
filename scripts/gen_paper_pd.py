@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A4 PDFs of docs/PAPER-PD.es.md and docs/PAPER-PD.md (DejaVu)."""
+"""A4 PDF of docs/PAPER-PD.md (DejaVu)."""
 from pathlib import Path
 
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
@@ -13,7 +13,6 @@ from reportlab.platypus import Paragraph, Preformatted, SimpleDocTemplate, Space
 
 ROOT = Path(__file__).resolve().parents[1]
 PAPERS = [
-    (ROOT / "docs" / "PAPER-PD.es.md", ROOT / "docs" / "PAPER-PD.es.pdf"),
     (ROOT / "docs" / "PAPER-PD.md", ROOT / "docs" / "PAPER-PD.pdf"),
 ]
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"

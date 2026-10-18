@@ -7,8 +7,7 @@ Tokens are engine `usage` + `tensorfold:*_total` with **delta==sum**. Nothing is
 The method is crude on purpose: open k streams of **one job** until aggregate tok/s stops paying.
 That is 100% of the GPU you already own.
 
-Operator cheat-sheet (Spanish, this box): Obsidian `Projects/RAIDFLASH/EJECUTAR-MAXIMO.md`.
-Fill P/D with k seats. Do not retune cuBLAS/kernels.
+Operator cheat-sheet on this box: fill P/D with k seats. Do not retune cuBLAS/kernels.
 
 ## 1. How to use it
 
@@ -59,7 +58,7 @@ async+packed also lost at the filled die. **Reverted.** Production stays default
 
 ## 4. Full expression grid (10 → 5000 tokens)
 
-Measured 2026-10-16, 60/60 cells `limpio`. JSON `versiones/EXPRESION-GB10.json`.
+Measured 2026-10-16, 60/60 cells clean. JSON `versiones/EXPRESION-GB10.json`.
 
 **Prose tok/s**
 
@@ -117,4 +116,4 @@ REA was not used. PARALLEL_MOST=8 is still the engine seat cap; D still paid at 
 ## 6. GitHub
 
 Apache-2.0 occupancy layer. Not a TensorFold vendor. Overlay is two files and three hooks.
-`gh auth login` is still required to push `raidflash-engine`.
+Public: https://github.com/jonasbridelu/raidflash-engine

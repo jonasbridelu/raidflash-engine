@@ -1,9 +1,14 @@
 # Changelog
 
+## 0.2.1 — 2026-10-17 — English-only public docs
+
+- Papers, README, TABLE, IMPLEMENT, changelog, and packer/sister prompts are English.
+- Removed `docs/PAPER.es.md`, `docs/PAPER.es.pdf`, `docs/PAPER-PD.es.md`, `docs/PAPER-PD.es.pdf`.
+
 ## 0.2.0 — 2026-10-17 — RAIDFLASH PD paper + Engine 1.0.4 numbers
 
 - Author: **Jonathan Briceño De Luise** (Peru, b. 1982).
-- Paper: `docs/PAPER-PD.md`, `docs/PAPER-PD.es.md`, `docs/PAPER-PD.pdf`, `docs/PAPER-PD.es.pdf`.
+- Paper (English): `docs/PAPER-PD.md`, `docs/PAPER-PD.pdf`.
 - Live packer 8k stripe 256 on `raidflash-glm53:1.0.4`: **94.6 tok/s**,
   2064 completion (16+8×256), cache 98.7%, `delta_gen=2064`.
 - Sister tokens are generated length, not DFlash `accepted`.
@@ -11,8 +16,8 @@
 
 ## 0.1.2 — occupancy wiring + reasoning EFI
 
-- `choose_k(thinking=True, max_tokens<=80)` → **k=4** (pico thinking 115 tok/s).
-  Largo (256+) sigue k=8.
+- `choose_k(thinking=True, max_tokens<=80)` → **k=4** (thinking peak 115 tok/s).
+  Long (256+) stays k=8.
 - `most_for_lanes(n)`: draft depth = min(7, WINDOW/n). k=4 keeps most=7;
   k=8 gets 4 (fits MULTI_WINDOW=32). Drops the busy hammer most 7→3.
 - `Packer.think(question)`: seed + 4 thought-sisters (P-hot, same prefix).
@@ -28,9 +33,9 @@
 The shareable recipe. `--parallel 8`, fat pool, RAIDFLASH-D/P, in-engine EFI.
 
 - In-engine packer EFI: `n_users` / `user_index` / `phase` (`1 → [8]`, `3 → [3,3,2]`).
-- Expression grid 60/60 limpio: k × 10…5000 × prosa/código/thinking (`docs/TABLE.md`).
+- Expression grid 60/60 clean: k × 10…5000 × prose/code/thinking (`docs/TABLE.md`).
 - Knobs that lost and stay off: `MULTI_DEPTH=joint`, `MULTI_ASYNC`+`packed`, tree, WINDOW=64.
-- k=16 fork measured then rolled back: D k=16 110 vs 8-seat D shorts 121; packer 16 hermanas 117. **0.1 ships 8 seats.**
+- k=16 fork measured then rolled back: D k=16 110 vs 8-seat D shorts 121; packer 16 sisters 117. **0.1 ships 8 seats.**
 - TensorFold Zig 1.0.x (incl. 1.0.1) is a different engine: GLM CUDA EXL3 occupancy stays on Mia Python 0.6.0 + this overlay. Zig `zig-engine` is WIP (shared rounds, missing Triton variants).
 
 ## 0.1.0 — 2026-10-17

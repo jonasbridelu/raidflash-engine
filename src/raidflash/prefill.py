@@ -16,10 +16,10 @@ SEED_MIN_TOKENS = 16  # serial seed (mt<16) leaves drafter_end=-1; _resume drops
 
 # Parallel-thought aspects for Packer.think. k=4 is the measured reasoning peak.
 THOUGHT_ASPECTS = (
-    "descompone el problema, fija hipotesis y lo que falta saber",
-    "busca contradicciones, casos borde y fallos de la hipotesis obvia",
-    "elige el camino mas corto a una respuesta verificable",
-    "cierra con la respuesta y un chequeo de una linea",
+    "decompose the problem, fix a hypothesis and what is still unknown",
+    "look for contradictions, edge cases, and failures of the obvious hypothesis",
+    "pick the shortest path to a verifiable answer",
+    "close with the answer and a one-line check",
 )
 
 
@@ -31,8 +31,8 @@ def thought_sections(question: str, k: int = 4) -> list[str]:
     for i in range(k):
         aspect = THOUGHT_ASPECTS[i % n]
         if k > n:
-            aspect = f"{aspect} (rama {i + 1}/{k})"
-        out.append(f"{aspect}. Pregunta: {question}")
+            aspect = f"{aspect} (branch {i + 1}/{k})"
+        out.append(f"{aspect}. Question: {question}")
     return out
 
 
@@ -47,9 +47,9 @@ def sister_prompts(document: str, sections: list[str]) -> list[str]:
     for i, sec in enumerate(sections, 1):
         out.append(
             document
-            + f"\n\nTarea {i}/{k}: escribe SOLO la seccion '{sec}' en 2 oraciones "
-            f"sobre el acta anterior. NO escribas las otras secciones ni introduccion. "
-            f"Termina con FIN{i}."
+            + f"\n\nTask {i}/{k}: write ONLY section '{sec}' in 2 sentences "
+            f"about the document above. Do not write the other sections or an introduction. "
+            f"End with FIN{i}."
         )
     return out
 

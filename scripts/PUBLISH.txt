@@ -1,7 +1,8 @@
 GitHub v0.2.0 — needs credentials (blocked 2026-10-17: no gh auth on this host).
 
 Author: Jonathan Briceño De Luise (Peru, b. 1982).
-Paper: docs/PAPER-PD.es.pdf / docs/PAPER-PD.pdf
+Paper (English): docs/PAPER-PD.md / docs/PAPER-PD.pdf
+Repo: https://github.com/jonasbridelu/raidflash-engine
 Live smoke 1.0.4: D 49.5→121.1; packer 94.6 tok/s.
 
 On a machine with gh:

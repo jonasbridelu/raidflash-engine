@@ -92,9 +92,9 @@ def test_three_users_send_three_sisters(monkeypatch):
 
 
 def test_thought_sections_are_prefix_sisters():
-    secs = thought_sections("por que 2+2=4", k=4)
+    secs = thought_sections("why is 2+2=4", k=4)
     assert len(secs) == 4
-    assert all("por que 2+2=4" in s for s in secs)
+    assert all("why is 2+2=4" in s for s in secs)
     assert len(set(secs)) == 4
 
 

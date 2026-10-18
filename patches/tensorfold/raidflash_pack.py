@@ -167,15 +167,15 @@ def k_for(
 
 
 def default_sections(k: int) -> list[str]:
-    return [f"parte-{i+1}" for i in range(max(1, int(k)))]
+    return [f"part-{i+1}" for i in range(max(1, int(k)))]
 
 
 def sister_prompt(document: str, i: int, k: int, section: str) -> str:
     return (
         document
-        + f"\n\nTarea {i}/{k} seccion '{section}': continua el acta anterior. "
-        f"Escribe hasta el limite de tokens. Sin introduccion, sin las otras secciones. "
-        f"Termina con FIN{i}."
+        + f"\n\nTask {i}/{k} section '{section}': continue the document above. "
+        f"Write up to the token limit. No introduction, no other sections. "
+        f"End with FIN{i}."
     )
 
 

@@ -11,8 +11,8 @@ JSON: [data/gb10-8seat.json](data/gb10-8seat.json). Code: `raidflash.choose.choo
 | Same document, sisters after seed ≥16 | **8** | P-hot 8k Engine 1.0.4: **94.6 tok/s**, 2064 tok, cache **98.7%**; stress 1.0.1 91.8 / 98.9%; 32k: **61 tok/s**, cache **99.7%** |
 | Many independent cold prompts | **8** | prefill 8k: **8806 tok/s** (k=1 was 2317); 32k: **15744 tok/s**, 225k prompt tok |
 | Decode, short prefix | **8** | fill-80 **86.5**; 1024 **88.2**; 5000 **73.4** (21k tok, 5 min) |
-| Thinking corto mt≤80 | **4** | pico **115.4** tok/s; k=8 recorta most (WINDOW/n) |
-| Thinking largo 256+ | **8** | occupancy; 115 tok/s @256 |
+| Short thinking mt≤80 | **4** | peak **115.4** tok/s; k=8 cuts `most` (WINDOW/n) |
+| Long thinking 256+ | **8** | occupancy; 115 tok/s @256 |
 | Decode after 8k KV | **8** | **59.3 tok/s** (still > C1) |
 | 3 users D / P-hot / many | **[3,3,2]** | fill the die |
 | 3 users one-doc seed | **[1,1,1]** | extra cold k on one prefix does not split the sequential prefill |
