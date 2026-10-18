@@ -6,8 +6,9 @@ die to one person, or the full die split toward whoever needs compute now.**
 
 Ignorance is running a $120k B300 at ~350 tok/s C1 while the same box does
 thousands at 32–128 streams. Same bitrate (HBM, SMs). More resolution on
-the person's job. Local AI. Sovereign AI. CAKE (custom kernels, AI PCs
-for enterprise and business).
+the person's job. Local AI. Sovereign AI. CAKE
+(https://cakeinfraestructure.com — custom kernels, AI PCs for enterprise
+and business).
 
 ## This lab (2×GB10) — already custom
 

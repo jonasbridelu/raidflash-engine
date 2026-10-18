@@ -78,8 +78,9 @@ are RAIDFLASH's k, aimed at one job or split by the injector.
 In-engine `POST /v1/raidflash/complete`: seed + k sisters on `App.run`.
 Surgical TensorFold overlay (DepthPolicy `most`, no fc7 clobber). Flag
 off = stock engine. CAKE is the company (custom kernels, AI PCs for
-enterprise and business); RAIDFLASH is the occupancy layer so those
-machines spend the chip the buyer paid for.
+enterprise and business, [cakeinfraestructure.com](https://cakeinfraestructure.com));
+RAIDFLASH is the occupancy layer so those machines spend the chip the
+buyer paid for.
 
 Falsified here: tree T3, request-level P∥D overlap, `MULTI_WINDOW=64`.
 MLA/Hydragen is Dynamo, out of this stack. Neighbour: IPPD
@@ -91,6 +92,6 @@ v0.1's methods are crude on purpose: a seed, k sisters, an EFI table, one
 POST. Archaic. Almost silly. The community will write the sharp kernels.
 The disruption is the permission: **run the GPU you already own at 100%.**
 People who were about to buy another card can enjoy the one they paid for.
-Sovereign AI. Local AI. CAKE.
+Sovereign AI. Local AI. CAKE — https://cakeinfraestructure.com
 
 Map: [EFI.md](EFI.md). Law: [OCCUPANCY.md](OCCUPANCY.md). Tables: [TABLE.md](TABLE.md).

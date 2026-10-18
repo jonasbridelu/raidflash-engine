@@ -175,8 +175,9 @@ MLA / Hydragen is Dynamo, out of this stack. Neighbour: IPPD
 (arXiv 2609.05707).
 
 CAKE is the company: custom kernels and AI PCs for enterprise and
-business. RAIDFLASH is the occupancy layer so those machines spend the
-chip the buyer paid for.
+business ([cakeinfraestructure.com](https://cakeinfraestructure.com)).
+RAIDFLASH is the occupancy layer so those machines spend the chip the
+buyer paid for.
 
 ---
 
@@ -189,7 +190,7 @@ permission:
 **Run the GPU you already own at 100%.**
 
 People who were about to buy another card can use the one they paid for.
-Sovereign AI. Local AI. CAKE.
+Sovereign AI. Local AI. CAKE — https://cakeinfraestructure.com
 
 Tables: [TABLE.md](TABLE.md). Law: [OCCUPANCY.md](OCCUPANCY.md). Map: [EFI.md](EFI.md).
 

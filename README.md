@@ -5,9 +5,9 @@
 One user. Every free GPU stream that still pays. Prefill (P) and decode (D)
 each have their own knee. Commercial serving parks ~50 tok/s on you and
 keeps the rest of the die for N tenants. RAIDFLASH spends the aggregate on
-**you**. [CAKE](docs/CAKE.md) is the company: custom kernels and AI PCs
-for enterprise and business. RAIDFLASH is the occupancy layer on that
-stack.
+**you**. [CAKE](https://cakeinfraestructure.com) is the company: custom
+kernels and AI PCs for enterprise and business. RAIDFLASH is the occupancy
+layer on that stack. [CAKE.md](docs/CAKE.md).
 
 ```
 k = min(PARALLEL, k_codo_p)   # prefill

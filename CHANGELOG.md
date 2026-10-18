@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3 — 2026-10-17 — CAKE URL
+
+- Company site: https://cakeinfraestructure.com
+
 ## 0.2.2 — 2026-10-17 — CAKE is the company
 
 - CAKE: custom kernels and AI PCs for enterprise and business.

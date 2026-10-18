@@ -1,5 +1,7 @@
 # CAKE
 
+**https://cakeinfraestructure.com**
+
 CAKE is the company. It builds **AI PCs for enterprise and business**,
 and it runs **custom kernels** on those machines.
 
@@ -19,4 +21,4 @@ k = min(PARALLEL, k_codo_phase)
 Open occupancy (`raidflash-engine`) is how the measured tok/s stay honest
 on silicon CAKE already ships.
 
-CAKE.
+https://cakeinfraestructure.com

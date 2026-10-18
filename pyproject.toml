@@ -1,6 +1,6 @@
 [project]
 name = "raidflash"
-version = "0.2.2"
+version = "0.2.3"
 description = "RAIDFLASH PD: fill every free GPU stream of one user until throughput stops scaling."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -18,7 +18,8 @@ dependencies = []
 dev = ["pytest>=7.0"]
 
 [project.urls]
-Homepage = "https://github.com/raidflash/raidflash-engine"
+Homepage = "https://github.com/jonasbridelu/raidflash-engine"
+Company = "https://cakeinfraestructure.com"
 Thesis = "docs/OCCUPANCY.md"
 
 [build-system]
