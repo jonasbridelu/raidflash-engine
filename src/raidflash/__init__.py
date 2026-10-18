@@ -12,7 +12,7 @@ from .policy import adapt_code, bind_d, enabled, most_for_lanes
 from .prefill import sister_prompts, seed_prompt, thought_sections
 from .packer import Packer
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __all__ = [
     "Occupancy",
     "EfiMap",

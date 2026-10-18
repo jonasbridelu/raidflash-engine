@@ -77,8 +77,9 @@ are RAIDFLASH's k, aimed at one job or split by the injector.
 
 In-engine `POST /v1/raidflash/complete`: seed + k sisters on `App.run`.
 Surgical TensorFold overlay (DepthPolicy `most`, no fc7 clobber). Flag
-off = stock engine. CAKE is the product that answers people; RAIDFLASH
-is the occupancy layer so that answer spends the chip they paid for.
+off = stock engine. CAKE is the company (custom kernels, AI PCs for
+enterprise and business); RAIDFLASH is the occupancy layer so those
+machines spend the chip the buyer paid for.
 
 Falsified here: tree T3, request-level P∥D overlap, `MULTI_WINDOW=64`.
 MLA/Hydragen is Dynamo, out of this stack. Neighbour: IPPD

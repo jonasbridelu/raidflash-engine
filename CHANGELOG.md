@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2 — 2026-10-17 — CAKE is the company
+
+- CAKE: custom kernels and AI PCs for enterprise and business.
+- RAIDFLASH is the occupancy layer on that stack (`docs/CAKE.md`).
+
 ## 0.2.1 — 2026-10-17 — English-only public docs
 
 - Papers, README, TABLE, IMPLEMENT, changelog, and packer/sister prompts are English.

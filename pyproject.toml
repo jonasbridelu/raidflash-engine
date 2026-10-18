@@ -1,6 +1,6 @@
 [project]
 name = "raidflash"
-version = "0.2.1"
+version = "0.2.2"
 description = "RAIDFLASH PD: fill every free GPU stream of one user until throughput stops scaling."
 readme = "README.md"
 license = { file = "LICENSE" }

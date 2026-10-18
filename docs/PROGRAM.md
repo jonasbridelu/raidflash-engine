@@ -6,7 +6,8 @@ die to one person, or the full die split toward whoever needs compute now.**
 
 Ignorance is running a $120k B300 at ~350 tok/s C1 while the same box does
 thousands at 32–128 streams. Same bitrate (HBM, SMs). More resolution on
-the person's job. Local AI. Sovereign AI. CAKE.
+the person's job. Local AI. Sovereign AI. CAKE (custom kernels, AI PCs
+for enterprise and business).
 
 ## This lab (2×GB10) — already custom
 
@@ -31,8 +32,8 @@ Public (StorageReview 2026-10-05, two GB300 Stations, 400G DACs):
 Injector (`EfiMap.gb300_flash_pair()`, `--parallel` 128):
 
 ```
-1 usuario  D  → k=32     ~2700 tok/s  (miles, un cursor de tiras)
-4 usuarios D  → [32×4]   die ~2950, ~740 cada uno
+1 user   D  → k=32     ~2700 tok/s  (thousands, one cursor of stripes)
+4 users  D  → [32×4]   die ~2950, ~740 each
 ```
 
 128 lanes are the seat count. The Flash **elbow** is ~32. Four people each
@@ -59,5 +60,5 @@ the 8 from GB10.
 Do not restart the GB10 serving path for this list. Do not jump to Zig
 until the full EXL3/NVFP4 checkpoint serves TP2 with parallel+prefix.
 
-The most custom parallel engine in the world, here, is occupancy: P and D
-stripes on a regular engine, EFI-metered, for the human in front of CAKE.
+Occupancy on CAKE hardware: P and D stripes on the engine, EFI-metered,
+for the work in front of the AI PC.

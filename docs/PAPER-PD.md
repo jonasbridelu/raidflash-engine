@@ -174,8 +174,9 @@ cache), prefix-kqi with too much SMEM on GB10 (D 107→83; lab only).
 MLA / Hydragen is Dynamo, out of this stack. Neighbour: IPPD
 (arXiv 2609.05707).
 
-CAKE is the product that answers people. RAIDFLASH is the occupancy
-layer so that answer spends the chip they paid for.
+CAKE is the company: custom kernels and AI PCs for enterprise and
+business. RAIDFLASH is the occupancy layer so those machines spend the
+chip the buyer paid for.
 
 ---
 
