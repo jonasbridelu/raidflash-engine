@@ -1,4 +1,4 @@
-# RAIDFLASH 1.0 — PD occupancy
+# RAIDFLASH 1.0 — PD occupancy ( Prefill/Decode )
 
 **Total engine concurrency, used dynamically, for maximum tokens/s.**
 
