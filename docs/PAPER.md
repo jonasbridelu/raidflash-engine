@@ -2,7 +2,9 @@
 
 **The whole die, to whoever needs compute most.**
 
-Johann · October 2026 · v0.1
+Jonathan Briceño De Luise · Peru, b. 1982 · October 2026 · v1.0 PD
+
+Full paper: [PAPER-PD.md](PAPER-PD.md) · [PDF](PAPER-PD.pdf) · [español](PAPER-PD.es.md) · [PDF ES](PAPER-PD.es.pdf).
 
 ## Abstract
 

@@ -1,6 +1,6 @@
 # Contributing
 
-RAIDFLASH is occupancy for one user. PRs that add multi-tenant "fairness"
+RAIDFLASH is occupancy for one user. Author: Jonathan Briceño De Luise. PRs that add multi-tenant "fairness"
 that leaves slots idle while a single request runs will be closed.
 
 Bring numbers: `delta prompt_tokens == sum(usage)` or the run is discarded.

@@ -1,11 +1,11 @@
 [project]
 name = "raidflash"
-version = "0.1.1"
-description = "Fill every free GPU stream of one user until throughput stops scaling."
+version = "0.2.0"
+description = "RAIDFLASH PD: fill every free GPU stream of one user until throughput stops scaling."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
-authors = [{ name = "Johann", email = "raidflash@cake" }]
+authors = [{ name = "Jonathan Briceño De Luise" }]
 keywords = ["llm", "inference", "speculative-decoding", "prefill", "occupancy"]
 classifiers = [
   "License :: OSI Approved :: Apache Software License",

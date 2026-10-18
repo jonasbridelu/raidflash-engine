@@ -14,6 +14,27 @@ from __future__ import annotations
 
 SEED_MIN_TOKENS = 16  # serial seed (mt<16) leaves drafter_end=-1; _resume drops it
 
+# Parallel-thought aspects for Packer.think. k=4 is the measured reasoning peak.
+THOUGHT_ASPECTS = (
+    "descompone el problema, fija hipotesis y lo que falta saber",
+    "busca contradicciones, casos borde y fallos de la hipotesis obvia",
+    "elige el camino mas corto a una respuesta verificable",
+    "cierra con la respuesta y un chequeo de una linea",
+)
+
+
+def thought_sections(question: str, k: int = 4) -> list[str]:
+    """k occupancy lanes of one question. Prefix-identical → P-hot cache."""
+    k = max(1, int(k))
+    n = len(THOUGHT_ASPECTS)
+    out = []
+    for i in range(k):
+        aspect = THOUGHT_ASPECTS[i % n]
+        if k > n:
+            aspect = f"{aspect} (rama {i + 1}/{k})"
+        out.append(f"{aspect}. Pregunta: {question}")
+    return out
+
 
 def seed_prompt(document: str) -> str:
     """The seed IS the document. Sisters must start with this exact prefix."""

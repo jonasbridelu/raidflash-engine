@@ -2,7 +2,9 @@
 
 **El die entero, a quien más lo necesita.**
 
-Johann · octubre 2026 · v0.1
+Jonathan Briceño De Luise · Peruano de nacimiento, 1982 · octubre 2026 · v1.0 PD
+
+Paper completo: [PAPER-PD.es.md](PAPER-PD.es.md) · [PDF](PAPER-PD.es.pdf) · [English](PAPER-PD.md) · [PDF EN](PAPER-PD.pdf).
 
 ---
 
@@ -269,6 +271,6 @@ CAKE.
 
 ---
 
-Johann, 2026. Apache-2.0. Código: `raidflash-engine` v0.1.
+Jonathan Briceño De Luise, 2026. Apache-2.0. Código: `raidflash-engine` v0.2.
 Números: `versiones/EFI-MAP-GB10-2026-10-17.json`.
 Ley: `docs/OCCUPANCY.md`. Inyector: `docs/EFI.md`.

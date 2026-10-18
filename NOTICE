@@ -1,5 +1,5 @@
 RAIDFLASH
-Copyright 2026 Johann
+Copyright 2026 Jonathan Briceño De Luise
 
 This product is the occupancy layer: one user fills free GPU streams up to
 the dynamic knee (k = min(PARALLEL, k_codo), separately for P and D).

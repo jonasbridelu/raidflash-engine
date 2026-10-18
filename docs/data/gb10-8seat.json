@@ -1,0 +1,21 @@
+{
+  "engine": "tensorfold-glm53:v0.6.2-raidflash",
+  "recipe": "8-seat 0.1",
+  "parallel": 8,
+  "pool_tokens": 1961984,
+  "tokens": "usage + tensorfold:*_total delta==sum",
+  "measured": "2026-10-16/17",
+  "implement": {
+    "prefill_one_document": {"k": 1, "why": "one prefix is sequential; seed then P-hot sisters"},
+    "prefill_many_independent": {"k": 8, "tok_s_8k": 8806, "tok_s_32k": 15744},
+    "decode": {"k": 8, "tok_s_fill80": 86.5, "tok_s_1024": 88.2, "tok_s_5000": 73.4},
+    "decode_after_8k_kv": {"k": 8, "tok_s": 59.3},
+    "decode_after_32k_kv": {"k": 8, "tok_s_wall": 12.6, "note": "prefill dominates wall; still fill 8"},
+    "packer_p_hot": {"k": 8, "seed_tokens": 16, "tok_s_8k": 91.8, "cache_8k": 98.9, "tok_s_32k": 61.0, "cache_32k": 99.7},
+    "n_users_3": {"D_or_P_hot": [3, 3, 2], "prefill_one": [1, 1, 1], "prefill_many": [3, 3, 2]}
+  },
+  "P_cold_prefill_tok_s": {"1_8k": 2317, "4_8k": 4884, "8_8k": 8806, "8_32k": 15744},
+  "D_fill_tok_s": {"1_80": 33.5, "4_80": 62.7, "8_80": 86.5, "8_256": 85.0, "8_1024": 88.2, "8_5000": 73.4},
+  "D_short_efi": {"1": 49.5, "2": 71.0, "4": 81.1, "8": 121.1},
+  "knobs_off": ["joint", "async+packed", "tree", "WINDOW=64", "k=16 as default"]
+}

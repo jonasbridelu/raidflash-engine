@@ -1,7 +1,8 @@
-GitHub v0.1.0 — needs credentials (blocked 2026-10-17: no gh auth, SSH github denied).
+GitHub v0.2.0 — needs credentials (blocked 2026-10-17: no gh auth on this host).
 
-Tag: v0.1.0  commit: 1955974
-Live smoke: packer k=8 99.1% cache; D 34.2 → 103.5 tok/s.
+Author: Jonathan Briceño De Luise (Peru, b. 1982).
+Paper: docs/PAPER-PD.es.pdf / docs/PAPER-PD.pdf
+Live smoke 1.0.4: D 49.5→121.1; packer 94.6 tok/s.
 
 On a machine with gh:
 

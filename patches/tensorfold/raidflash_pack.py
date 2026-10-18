@@ -29,6 +29,90 @@ def _parallel() -> int:
     return _env_int("RAIDFLASH_PARALLEL", "RAIDFLASH_BUSY", "GLM53_TF_RAIDFLASH_BUSY", default=8)
 
 
+def n_active(obj) -> int:
+    """Live GPU streams. Lanes sit on MultiDecoder, not GlmEngine.
+
+    Accepts MultiDecoder, GlmEngine, or App (``app.engine.multi``).
+    """
+    seen: set[int] = set()
+    cur = obj
+    while cur is not None and id(cur) not in seen:
+        seen.add(id(cur))
+        live = getattr(cur, "live", None)
+        if callable(live):
+            try:
+                return max(0, int(live()))
+            except Exception:
+                pass
+        lanes = getattr(cur, "lanes", None)
+        if lanes:
+            return len(lanes)
+        nxt = getattr(cur, "multi", None)
+        if nxt is None:
+            nxt = getattr(cur, "engine", None)
+        cur = nxt
+    return 0
+
+
+def idle_slots(obj=None, parallel: int | None = None) -> int:
+    cap = max(1, int(parallel if parallel is not None else _parallel()))
+    used = n_active(obj) if obj is not None else 0
+    return max(0, cap - used)
+
+
+def _auto_on() -> bool:
+    raw = (os.environ.get("RAIDFLASH_AUTO") or os.environ.get("GLM53_TF_RAIDFLASH_AUTO") or "").strip().lower()
+    return raw in ("1", "true", "on", "yes")
+
+
+def document_of(body: dict) -> str:
+    rf = body.get("raidflash") if isinstance(body.get("raidflash"), dict) else None
+    if isinstance(rf, dict) and rf.get("document"):
+        return str(rf.get("document"))
+    if body.get("document"):
+        return str(body.get("document"))
+    msgs = body.get("messages") or []
+    if msgs and isinstance(msgs[-1], dict):
+        content = msgs[-1].get("content")
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts = []
+            for item in content:
+                if isinstance(item, dict) and item.get("type") in (None, "text"):
+                    text = item.get("text")
+                    if text:
+                        parts.append(str(text))
+            if parts:
+                return "\n".join(parts)
+    prompt = body.get("prompt")
+    return str(prompt) if prompt else ""
+
+
+def wants_pack(body: dict | None) -> bool:
+    """Chat enters the packer: raidflash.document/sections/auto, or AUTO long chat."""
+    if not isinstance(body, dict):
+        return False
+    if body.get("stream"):
+        return False
+    if body.get("tools") or body.get("functions"):
+        return False
+    rf = body.get("raidflash")
+    if isinstance(rf, dict):
+        if rf.get("off") or rf.get("enabled") is False:
+            return False
+        if rf.get("sections") or rf.get("document") or rf.get("auto"):
+            return True
+    if not _auto_on():
+        return False
+    min_mt = _env_int("RAIDFLASH_AUTO_MIN_TOKENS", default=256)
+    mt = int(body.get("max_tokens") or 0)
+    if mt < min_mt:
+        return False
+    min_chars = _env_int("RAIDFLASH_AUTO_MIN_CHARS", default=512)
+    return len(document_of(body)) >= min_chars
+
+
 def split_lanes(n_users: int, parallel: int, k_codo: int) -> list[int]:
     """Fill paying lanes, cap each user at k_codo, split leftover even."""
     n = max(1, int(n_users))
@@ -59,8 +143,13 @@ def k_for(
     user_index: int = 0,
     phase: str = "P_hot",
     parallel: int | None = None,
+    n_active: int | None = None,
 ) -> int:
-    """Sisters for this user: EFI split, then section count, then slot cap."""
+    """Sisters for this user: EFI split, section count, slot cap, idle leftover.
+
+    n_active=None means the die is empty (tests / one-user idle). A full die
+    still returns 1 so the job queues instead of failing.
+    """
     cap = max(1, int(parallel if parallel is not None else _parallel()))
     n = n_users if n_users is not None else _env_int("RAIDFLASH_USERS", default=1)
     ph = phase if phase in ("D", "P_cold", "P_hot") else "P_hot"
@@ -69,14 +158,23 @@ def k_for(
     mine = ks[ui] if ui < len(ks) else 0
     if mine <= 0:
         mine = 1
-    return min(max(1, int(n_sections)), mine, cap)
+    want = cap if int(n_sections) <= 0 else int(n_sections)
+    k = min(max(1, want), mine, cap)
+    if n_active is not None:
+        idle = max(0, cap - max(0, int(n_active)))
+        k = min(k, idle) if idle > 0 else 1
+    return k
+
+
+def default_sections(k: int) -> list[str]:
+    return [f"parte-{i+1}" for i in range(max(1, int(k)))]
 
 
 def sister_prompt(document: str, i: int, k: int, section: str) -> str:
     return (
         document
-        + f"\n\nTarea {i}/{k}: escribe SOLO la seccion '{section}' en 2 oraciones "
-        f"sobre el acta anterior. NO escribas las otras secciones ni introduccion. "
+        + f"\n\nTarea {i}/{k} seccion '{section}': continua el acta anterior. "
+        f"Escribe hasta el limite de tokens. Sin introduccion, sin las otras secciones. "
         f"Termina con FIN{i}."
     )
 
@@ -124,7 +222,7 @@ def complete(
     document: str,
     sections: list[str],
     *,
-    stripe_tokens: int = 80,
+    stripe_tokens: int = 256,
     seed_tokens: int = SEED_MIN_TOKENS,
     model: str = "",
     cancelled: Callable[[], bool] | None = None,
@@ -134,15 +232,36 @@ def complete(
 ) -> dict[str, Any]:
     if not document or not str(document).strip():
         raise ValueError("raidflash: document required")
-    if not sections:
-        raise ValueError("raidflash: sections required")
-    k = k_for(len(sections), n_users=n_users, user_index=user_index, phase=phase)
-    secs = [str(s) for s in sections[:k]]
+    cap = _parallel()
+    used0 = n_active(app)
+    k = k_for(
+        len(sections or []),
+        n_users=n_users,
+        user_index=user_index,
+        phase=phase,
+        parallel=cap,
+        n_active=used0,
+    )
+    secs = [str(s) for s in (sections or [])[:k]]
+    if len(secs) < k:
+        secs.extend(default_sections(k)[len(secs):])
     seed_tokens = max(SEED_MIN_TOKENS, int(seed_tokens))
     stripe_tokens = max(1, int(stripe_tokens))
-    model = model or getattr(app, "served_name", "") or ""
+    model = model or getattr(app, "served_name", "") or getattr(app, "served", "") or ""
     t0 = time.perf_counter()
     seed = _lane(app, model, document, seed_tokens, cancelled)
+    used1 = n_active(app)
+    k2 = k_for(
+        len(secs),
+        n_users=n_users,
+        user_index=user_index,
+        phase=phase,
+        parallel=cap,
+        n_active=used1,
+    )
+    if k2 < k:
+        k = k2
+        secs = secs[:k]
     rows: list[dict[str, Any] | None] = [None] * k
     errors: list[BaseException] = []
 
@@ -187,5 +306,7 @@ def complete(
         "n_users": int(n),
         "user_index": max(0, int(user_index)),
         "phase": ph,
-        "k_plan": split_lanes(n, _parallel(), k_codo(ph, _parallel())),
+        "k_plan": split_lanes(n, cap, k_codo(ph, cap)),
+        "n_active": used1,
+        "idle": max(0, cap - used1),
     }

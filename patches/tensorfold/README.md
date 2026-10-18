@@ -6,7 +6,7 @@ Tree speculation is **OFF**. MLA/Hydragen is Dynamo, not this overlay.
 Drop these two files into `tensorfold/families/glm5_next/cuda/`:
 
 - `raidflash_pack.py` — in-engine packer (`App.run`, no HTTP loopback)
-- `raidflash_policy.py` — call-time env reads; `BUSY` default **8** (not frozen at import)
+- `raidflash_policy.py` — call-time env reads; `most_for_lanes` = min(7, WINDOW/n) (k=8 → most=4, k=4 → most=7)
 
 Then apply three hooks.
 
@@ -52,7 +52,8 @@ if policy is not None:
 Add `Handler._raidflash`. Dispatch:
 
 - `POST /v1/raidflash/complete`
-- `POST /v1/chat/completions` when the body has `raidflash.sections`
+- `POST /v1/chat/completions` when `raidflash.document` or `raidflash.sections` or `raidflash.auto`
+- same chat route when `RAIDFLASH_AUTO=1`, `max_tokens>=256`, last user message ≥512 chars, not streaming, no tools
 
 Do not copy the rest of TensorFold `http.py`. Handler (live v0.6.1, abbreviated):
 
@@ -68,7 +69,7 @@ def _raidflash(self, body: dict[str, Any], model: str, gone) -> None:
         if msgs and isinstance(msgs[-1], dict):
             document = msgs[-1].get("content")
     sections = rf.get("sections") or []
-    stripe = int(rf.get("stripe_tokens") or body.get("max_tokens") or 80)
+    stripe = int(rf.get("stripe_tokens") or body.get("max_tokens") or 256)
     seed_tokens = int(rf.get("seed_tokens") or SEED_MIN_TOKENS)
     n_users = int(rf.get("n_users") or 0) or None
     user_index = int(rf.get("user_index") or 0)
@@ -85,8 +86,7 @@ In `do_POST`, after reading JSON:
 ```python
 raidflash = route.endswith("/raidflash/complete")
 chat = route.endswith("/chat/completions")
-rf = body.get("raidflash") if isinstance(body, dict) else None
-if raidflash or (chat and isinstance(rf, dict) and rf.get("sections")):
+if raidflash or (chat and _rf_wants_pack(body)):
     return self._raidflash(body, app.reply_model(body), socket_cancellation(self.connection))
 ```
 

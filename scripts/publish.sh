@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Create public GitHub repo and push v0.1.0. Needs: gh auth login
+# Create public GitHub repo and push HEAD + tags. Needs: gh auth login
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

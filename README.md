@@ -1,4 +1,4 @@
-# RAIDFLASH 0.1 — D/P occupancy
+# RAIDFLASH 1.0 — PD occupancy
 
 **Total engine concurrency, used dynamically, for maximum tokens/s.**
 
@@ -17,7 +17,8 @@ k = min(PARALLEL, k_codo_d)   # decode
 pool). k=16 was measured: packer pays, D peak does not (pool tax). Copy the
 occupancy law, not a bigger N.
 
-Johann, 2026. Paper: [PAPER.md](docs/PAPER.md) · [español](docs/PAPER.es.md).
+Jonathan Briceño De Luise (Peru, b. 1982), 2026.
+Paper PD: [PAPER-PD.md](docs/PAPER-PD.md) · [PDF](docs/PAPER-PD.pdf) · [español](docs/PAPER-PD.es.md) · [PDF ES](docs/PAPER-PD.es.pdf).
 Program: [PROGRAM.md](docs/PROGRAM.md). Neighbour: [IPPD](https://arxiv.org/abs/2609.05707).
 Law: [OCCUPANCY](docs/OCCUPANCY.md). Injector: [EFI](docs/EFI.md).
 Complete measured table (k × tokens × prose/code/reasoning): [TABLE](docs/TABLE.md).
@@ -27,19 +28,19 @@ Complete measured table (k × tokens × prose/code/reasoning): [TABLE](docs/TABL
 | **P** | seed the document, then sister streams | no acceptance; KV is there or the GEMM runs |
 | **D** | dense drafts on those lanes | acceptance bounds **depth of one chain**, not lane count |
 
-## Live smoke — 8-seat recipe (0.1)
+## Live smoke — 8-seat recipe (Engine 1.0.4)
 
-Image `tensorfold-glm53:v0.6.2-raidflash`, `streams.max=8`, tree OFF,
+Image `raidflash-glm53:1.0.4`, `streams.max=8`, tree OFF, PREFIX=0,
 `PREFILL_ROWS=4096` `FILL_ROWS=2048` `CACHE_GIB=12.5`. Real `usage`, delta==sum.
 
 | run | result |
 |---|---|
-| D k=8 fill-to-length (80×8) | **76–85 tok/s**, 640 tok, `length` ×8 |
-| EFI D shorts k=8 | **121 tok/s** (2.45× C1) |
-| Expression k=8 prosa/código/thinking @1024 | **84 / 109 / 101 tok/s** |
-| Thinking k=8 @256 | **115 tok/s** |
-| In-engine packer k=8 | cache **96–99%**, `k_plan=[8]` |
-| P-cold | ~**1600 tok/s** at k=1 (extra k does not pay) |
+| EFI D shorts k=8 | **121.1 tok/s** (2.45× C1 49.5) |
+| D k=8 mt=256 | **121.1 tok/s**, 2048 tok, 16.9 s |
+| 1024 prosa 1 cadena vs 8×128 | 30.2 s / 33.9 tok/s → **12.8 s / 80.3 tok/s** |
+| P-hot packer 8k stripe 256 | **94.6 tok/s**, 2064 tok, cache **98.7%**, 21.8 s |
+| P-hot EFI k=8 vs serial | **5.94×**, cache 99% |
+| P-cold | ~**1600 tok/s** at k=1; 8 docs 8k → **8806 tok/s** |
 | 3 users | `[3, 3, 2]` |
 
 Full grid: [TABLE](docs/TABLE.md). `joint` / `async+packed` / tree / WINDOW=64 stay off.
@@ -92,5 +93,5 @@ Flag: `RAIDFLASH=1` or `/tmp/raidflash.on`. Slot cap: `--parallel`
 
 ## License
 
-Apache-2.0. Johann. See [CONTRIBUTING](CONTRIBUTING.md).
+Apache-2.0. Jonathan Briceño De Luise. See [CONTRIBUTING](CONTRIBUTING.md).
 Prod chunks: `PREFILL_ROWS=4096` `FILL_ROWS=2048`.

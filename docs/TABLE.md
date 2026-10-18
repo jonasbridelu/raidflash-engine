@@ -1,10 +1,14 @@
 # Behavior table — this TensorFold engine (2×GB10, GLM-5.3-Flash EXL3)
 
-Measured on `tensorfold-glm53:v0.6.2-raidflash`, `--parallel` 8, RAIDFLASH-D ON, tree OFF.
+Measured on TensorFold GLM-5.3-Flash EXL3 2×GB10, `--parallel` 8, RAIDFLASH-D ON, tree OFF.
+Engine 1.0.4 packer 8k: **94.6 tok/s**, 2064 tok, cache 98.7% (`raidflash-glm53:1.0.4`).
 Tokens are engine `usage` + `tensorfold:*_total` with **delta==sum**. Nothing is chars/4.
 
 The method is crude on purpose: open k streams of **one job** until aggregate tok/s stops paying.
 That is 100% of the GPU you already own.
+
+Operator cheat-sheet (Spanish, this box): Obsidian `Projects/RAIDFLASH/EJECUTAR-MAXIMO.md`.
+Fill P/D with k seats. Do not retune cuBLAS/kernels.
 
 ## 1. How to use it
 
@@ -15,7 +19,7 @@ POST /v1/raidflash/complete
 Body: `document`, `sections`, optional `n_users`, `stripe_tokens`, `seed_tokens` (≥16).
 One user → k fills the die. Three users → `[3, 3, 2]`. P-cold → one lane each.
 
-Chat `/v1/chat/completions` is unchanged. `raidflash.sections` in the body also opens k lanes.
+Chat `/v1/chat/completions` packs when `raidflash.document` or `raidflash.sections` is set (sections optional). `RAIDFLASH_AUTO=1` packs long non-stream chats (`max_tokens>=256`, prompt ≥512 chars). Packer k is `min(EFI, idle slots on engine.multi.lanes)`.
 
 Overlay: drop `patches/tensorfold/raidflash_pack.py` + `raidflash_policy.py`, three hooks
 (`decode.py` most-arm, `multi.py` adapt/bind, `http.py` `_raidflash`). Flag `RAIDFLASH=1`.
@@ -85,6 +89,8 @@ Same-budget prose: 1024 tokens as 1 chain **33.9 tok/s / 30.2 s** vs 8×128 **80
 5000 as 1 chain EOS at 1590 tok; 8×625 delivered **5000 tok at 88.5 tok/s**.
 
 ## 5. What paid / what lost (honest)
+
+Reasoning 0.1.2: short think k=4 (keeps `most=7`); long think k=8 (occupancy, `most=min(7,32/n)`). Packer.think = seed + 4 thought-sisters.
 
 Paid:
 

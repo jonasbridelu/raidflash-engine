@@ -5,6 +5,7 @@ from io import BytesIO
 import urllib.error
 
 from raidflash.packer import Packer
+from raidflash.prefill import thought_sections
 
 
 class _Resp:
@@ -88,3 +89,30 @@ def test_three_users_send_three_sisters(monkeypatch):
     assert bodies[0]["raidflash"]["user_index"] == 0
     assert bodies[1]["raidflash"]["user_index"] == 2
     assert bodies[0]["raidflash"]["phase"] == "P_hot"
+
+
+def test_thought_sections_are_prefix_sisters():
+    secs = thought_sections("por que 2+2=4", k=4)
+    assert len(secs) == 4
+    assert all("por que 2+2=4" in s for s in secs)
+    assert len(set(secs)) == 4
+
+
+def test_think_opens_four_sisters(monkeypatch):
+    bodies = []
+
+    def fake_urlopen(req, timeout=0):
+        bodies.append(json.loads(req.data.decode()))
+        return _Resp({
+            "choices": [{"message": {"content": "ok"}}],
+            "usage": {"completion_tokens": 16},
+            "raidflash": {"k": 4, "mode": "raidflash-engine", "wall_s": 1.0,
+                          "agg_tok_s": 90.0, "cached_pct_min": 99.0, "seed": {},
+                          "sisters": [{}, {}, {}, {}]},
+        })
+
+    monkeypatch.setattr("raidflash.packer.urllib.request.urlopen", fake_urlopen)
+    out = Packer(base_url="http://engine").think("por que el cielo es azul")
+    sent = bodies[0]["raidflash"]["sections"]
+    assert len(sent) == 4
+    assert out["k"] == 4

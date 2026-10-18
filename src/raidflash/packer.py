@@ -1,4 +1,4 @@
-"""v0.1 packer: one user POST → seed (P) + k sister streams.
+"""Packer: one user POST → seed (P) + k sister streams.
 
 Prefers in-engine `/v1/raidflash/complete` (one POST, App.run lanes).
 Falls back to OpenAI chat fan-out when the overlay is absent.
@@ -26,7 +26,8 @@ def _load_efi() -> EfiMap:
         except OSError:
             pass
     return EfiMap.gb10()
-from .prefill import SEED_MIN_TOKENS, merge_sisters, seed_prompt, sister_prompts
+from .choose import choose_k
+from .prefill import SEED_MIN_TOKENS, merge_sisters, seed_prompt, sister_prompts, thought_sections
 
 
 def _env_int(*names: str, default: int) -> int:
@@ -105,7 +106,7 @@ class Packer:
         self,
         document: str,
         sections: list[str],
-        stripe_tokens: int = 80,
+        stripe_tokens: int = 256,
         seed_tokens: int = SEED_MIN_TOKENS,
     ) -> dict[str, Any]:
         """P seed then k sisters. k = occupancy.p_open() after seed (dynamic).
@@ -123,6 +124,22 @@ class Packer:
                 if exc.code != 404:
                     raise
         return self._complete_http(document, secs, stripe_tokens, seed_tokens)
+
+    def think(
+        self,
+        question: str,
+        k: int | None = None,
+        stripe_tokens: int = 256,
+        seed_tokens: int = SEED_MIN_TOKENS,
+    ) -> dict[str, Any]:
+        """One question → seed + k thought-sisters (P-hot). Default k=4 (thinking peak)."""
+        q = (question or "").strip()
+        if not q:
+            raise ValueError("question required")
+        if k is None:
+            k = choose_k(kind="decode", thinking=True, max_tokens=80)
+        k = max(1, int(k))
+        return self.complete(q, thought_sections(q, k), stripe_tokens=stripe_tokens, seed_tokens=seed_tokens)
 
     def _complete_engine(
         self,
@@ -158,7 +175,7 @@ class Packer:
         msg = choice.get("message") or {}
         text = msg.get("content") or msg.get("reasoning_content") or ""
         return {
-            "version": "0.1.0",
+            "version": "0.2.0",
             "mode": rf.get("mode") or "raidflash-engine",
             "k": rf.get("k") or len(secs),
             "text": text,
@@ -200,7 +217,7 @@ class Packer:
         wall = time.time() - t0
         out_tok = seed["completion_tokens"] + sum(s["completion_tokens"] for s in sisters)
         return {
-            "version": "0.1.0",
+            "version": "0.2.0",
             "mode": "raidflash-P",
             "k": k,
             "text": text,
